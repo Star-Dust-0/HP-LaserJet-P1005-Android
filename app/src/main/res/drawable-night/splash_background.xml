@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Pre-31 windowBackground splash (no native splash exists before Android
-     12). The glyph source carries its own surround now: 240dp item keeps the
-     printer at the same 144dp visual width as the old full-bleed artwork. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@color/splash_bg" />
-    <item android:width="240dp" android:height="240dp" android:gravity="center">
-        <bitmap android:src="@drawable/splash_glyph_src" android:gravity="center" />
+    <item android:drawable="@color/splash_bg"/>
+    <item
+        android:gravity="center"
+        android:height="240dp"
+        android:width="240dp">
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/splash_glyph_src"/>
     </item>
 </layer-list>

@@ -1,37 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-feature android:name="android.hardware.usb.host" android:required="false" />
+    <uses-feature
+        android:name="android.hardware.usb.host"
+        android:required="false"/>
     <application
-        android:extractNativeLibs="true"
-        android:allowBackup="false"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher"
+        android:theme="@style/Theme.HPP1005"
         android:label="HP P1005"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar"
-        android:supportsRtl="true">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:supportsRtl="true"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
         <activity
-            android:name=".MainActivity"
+            android:name="com.mohamedelnaggar.hpp1005.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
-            android:configChanges="uiMode|locale|layoutDirection|screenSize|smallestScreenSize|screenLayout|orientation|keyboardHidden">
+            android:configChanges="layoutDirection|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|keyboardHidden|locale">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/pdf" />
-                <data android:mimeType="image/*" />
-                <data android:mimeType="text/plain" />
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="application/pdf"/>
+                <data android:mimeType="image/*"/>
+                <data android:mimeType="text/plain"/>
             </intent-filter>
             <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="content" android:mimeType="application/pdf" />
-                <data android:scheme="content" android:mimeType="image/*" />
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data
+                    android:mimeType="application/pdf"
+                    android:scheme="content"/>
+                <data
+                    android:mimeType="image/*"
+                    android:scheme="content"/>
             </intent-filter>
         </activity>
+        <service
+            android:name="com.mohamedelnaggar.hpp1005.HpPrintService"
+            android:permission="android.permission.BIND_PRINT_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.printservice.PrintService"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.printservice"
+                android:resource="@xml/p1005_print_service"/>
+        </service>
     </application>
 </manifest>
-

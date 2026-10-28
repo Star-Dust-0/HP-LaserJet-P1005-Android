@@ -1,2796 +1,6036 @@
 package com.mohamedelnaggar.hpp1005;
 
-import android.app.Activity;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.SharedPreferences;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.database.Cursor;
-import android.net.Uri;
-import android.provider.OpenableColumns;
-import android.hardware.usb.UsbConstants;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.LinearGradient;
+import android.graphics.Outline;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Shader;
+import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.RippleDrawable;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.drawable.ColorDrawable;
-import android.view.Gravity;
-import android.view.HapticFeedbackConstants;
+import android.os.Looper;
+import android.provider.Settings;
+import android.text.TextUtils;
+import android.util.Log;
+import android.util.Property;
+import android.view.ContextThemeWrapper;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.view.Window;
 import android.view.WindowManager;
-import android.os.Looper;
-import android.text.InputType;
-import android.view.View;
+import android.view.animation.Interpolator;
+import android.view.animation.PathInterpolator;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.NumberPicker;
-import android.widget.ProgressBar;
-import android.widget.Toast;
 import android.widget.LinearLayout;
+import android.widget.NumberPicker;
+import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
-
-import java.util.HashMap;
+import android.widget.Toast;
+import androidx.activity.BackEventCompat;
+import androidx.activity.ComponentActivity;
+import androidx.activity.OnBackPressedCallback;
+import androidx.core.view.GravityCompat;
+import androidx.core.view.ViewCompat;
+import com.mohamedelnaggar.hpp1005.Foo2XqxConverter;
+import com.mohamedelnaggar.hpp1005.PrintFlow;
+import com.mohamedelnaggar.hpp1005.SheetComposer;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.Date;
-import java.text.SimpleDateFormat;
-import java.io.File;
-import java.io.FileInputStream;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import kotlin.UByte;
+import kotlinx.coroutines.DebugKt;
 
-public class MainActivity extends Activity {
-    private static final String ACTION_USB_PERMISSION =
-            "com.mohamedelnaggar.hpp1005.USB_PERMISSION";
-    private UsbManager usbManager;
+/* loaded from: classes.dex */
+public class MainActivity extends ComponentActivity {
+    private static final String ACTION_USB_PERMISSION = "com.mohamedelnaggar.hpp1005.USB_PERMISSION";
+    private static final int DIR_NONE = 0;
+    private static final int DIR_TAB_BACK = 4;
+    private static final int DIR_TAB_FORWARD = 3;
+    private static final int REQUEST_DOCUMENT = 42;
+    private boolean backCommitAnimating;
+    private boolean backCommitting;
+    private View backGesturePrevView;
+    private float backGestureProgress;
+    private Dialog capsuleDialog;
+    private volatile int currentJobDone;
+    private volatile String currentJobName;
+    private volatile int currentJobTotal;
+    private View currentPageView;
+    private Bitmap currentPreviewBitmap;
+    private ScrollView currentScrollView;
+    private boolean darkMode;
+    private DocumentRenderer documentRenderer;
+    private boolean draftMode;
+    private volatile boolean jobCancelRequested;
+    private boolean keepScreenAwake;
+    private ValueAnimator layoutModeAnimator;
+    private TextView[] layoutModeLabels;
+    private View layoutModePill;
+    private float layoutModePosition;
+    private Button layoutNext;
+    private Bitmap layoutPreviewBitmap;
+    private TextView layoutPreviewCount;
+    private int layoutPreviewGeneration;
+    private FrameLayout layoutPreviewHost;
+    private ImageView layoutPreviewImage;
+    private TextView layoutPreviewStatus;
+    private Future<?> layoutPreviewTask;
+    private Button layoutPrevious;
+    private LinearLayout layoutSettingsHost;
     private TextView output;
+    private FrameLayout pageHost;
+    private FrameLayout pendingBackArrived;
     private PendingIntent permissionIntent;
-
+    private OnBackPressedCallback predictiveBackCallback;
+    private volatile boolean printInProgress;
+    private SharedPreferences printPreferences;
+    private Uri selectedDocumentUri;
+    private boolean setupDone;
+    private boolean setupFinishedWithWarning;
+    private boolean setupRunning;
     private SharedPreferences uiPreferences;
+    private UsbManager usbManager;
     private final StringBuilder activityLog = new StringBuilder();
     private String currentPage = "home";
-    private String themeMode = "system"; // system, light, dark
-    private boolean darkMode;
+    private final ArrayDeque<String> pageStack = new ArrayDeque<>();
+    private final HashMap<String, Integer> scrollPositions = new HashMap<>();
+    private final ArrayList<Animator> backAnimators = new ArrayList<>();
+    private int DIR_SIGN = 1;
+    private String appLanguage = "en";
+    private String themeMode = "system";
     private boolean hapticsEnabled = true;
-    private boolean keepScreenAwake;
     private boolean confirmFirmwareLoad = true;
-    private boolean nativeBlurEnabled = true;
-
-    private static final int REQUEST_DOCUMENT = 42;
-    private Uri selectedDocumentUri;
     private String selectedDocumentName = "";
     private String selectedDocumentMime = "";
-    private DocumentRenderer documentRenderer;
-    private Bitmap currentPreviewBitmap;
     private int currentPreviewPage = 0;
-    private SharedPreferences printPreferences;
+    private final ExecutorService layoutPreviewExecutor = Executors.newSingleThreadExecutor();
     private String paperSize = "A4";
     private int copies = 1;
     private String pageRange = "all";
-    private String duplexMode = "off"; // off, manual-long, manual-short; the P1005 has no automatic duplex unit
-    private String pageOrientation = "portrait";
+    private String duplexMode = DebugKt.DEBUG_PROPERTY_VALUE_OFF;
     private int printDensity = 3;
-    private boolean draftMode;
-    private boolean fitToPage = true;
-    private volatile boolean printInProgress;
+    private String layoutMode = "size";
+    private String scaleModePref = "fit";
+    private int customScalePercent = 100;
+    private String layoutOrientation = DebugKt.DEBUG_PROPERTY_VALUE_AUTO;
+    private int pagesPerSheet = 2;
+    private String paperSource = DebugKt.DEBUG_PROPERTY_VALUE_AUTO;
+    private String sourceMapMain = "";
+    private String sourceMapPriority = "";
+    private boolean posterCutMarks = true;
+    private int posterOverlapMm = 5;
+    private float posterScalePercent = 150.0f;
+    private String readingOrder = "rtl";
+    private String bookletBinding = "right";
+    private final HashMap<String, Float> imageAspectCache = new HashMap<>();
     private final String[] paperSizes = {"A4", "A5", "Letter", "Legal", "B5"};
-
-    // Current print job shown on the queue page. Pages already accepted by USB
-    // cannot be retracted, so cancel stops the remaining pages only.
-    private volatile boolean jobCancelRequested;
-    private volatile String currentJobName;
-    private volatile int currentJobTotal;
-    private volatile int currentJobDone;
-
-    // Printer setup flow: 0 pending, 1 running, 2 done, 3 inconclusive, 4 failed
     private final int[] setupSteps = {0, 0, 0};
-    private boolean setupRunning;
-    private boolean setupDone;
-    private boolean setupFinishedWithWarning;
-
-    private interface ToggleAction {
-        void onToggle(boolean enabled);
-    }
-
-    private interface UsbResultCallback {
-        void onResult(boolean success, String detail);
-    }
-
-    private final BroadcastReceiver usbReceiver = new BroadcastReceiver() {
-        @Override public void onReceive(Context context, Intent intent) {
-            if (ACTION_USB_PERMISSION.equals(intent.getAction())) {
-                UsbDevice device = getUsbDevice(intent);
-                if (device == null) {
-                    append("وصل رد إذن USB دون جهاز مرفق.");
-                } else if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                    append("مُنح إذن USB · HP LaserJet P1005");
-                    inspectDevice(device);
+    private final BroadcastReceiver usbReceiver = new BroadcastReceiver() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.1
+        @Override // android.content.BroadcastReceiver
+        public void onReceive(Context context, Intent intent) {
+            if (MainActivity.ACTION_USB_PERMISSION.equals(intent.getAction())) {
+                UsbDevice usbDevice = MainActivity.this.getUsbDevice(intent);
+                if (usbDevice == null) {
+                    MainActivity mainActivity = MainActivity.this;
+                    mainActivity.lambda$append$117(mainActivity.getString(R.string.text_022));
+                } else if (intent.getBooleanExtra("permission", false)) {
+                    MainActivity mainActivity2 = MainActivity.this;
+                    mainActivity2.lambda$append$117(mainActivity2.getString(R.string.text_023));
+                    MainActivity.this.inspectDevice(usbDevice);
                 } else {
-                    append("رُفض إذن USB لـ " + describe(device));
+                    MainActivity.this.lambda$append$117(MainActivity.this.getString(R.string.text_024) + MainActivity.this.describe(usbDevice));
                 }
-                renderApp();
-            } else if (UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(intent.getAction())) {
-                append("وُصِل جهاز USB. افحص الأجهزة من صفحة الطباعة.");
-                renderApp();
-            } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(intent.getAction())) {
-                append("فُصِل جهاز USB.");
-                renderApp();
+                MainActivity.this.renderApp();
+                return;
+            }
+            if ("android.hardware.usb.action.USB_DEVICE_ATTACHED".equals(intent.getAction())) {
+                MainActivity mainActivity3 = MainActivity.this;
+                mainActivity3.lambda$append$117(mainActivity3.getString(R.string.text_025));
+                MainActivity.this.renderApp();
+            } else if ("android.hardware.usb.action.USB_DEVICE_DETACHED".equals(intent.getAction())) {
+                MainActivity mainActivity4 = MainActivity.this;
+                mainActivity4.lambda$append$117(mainActivity4.getString(R.string.text_026));
+                MainActivity.this.renderApp();
             }
         }
     };
 
-    @SuppressWarnings("deprecation")
-    private UsbDevice getUsbDevice(Intent intent) {
-        if (Build.VERSION.SDK_INT >= 33) {
-            return intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice.class);
-        }
-        return intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+    /* JADX INFO: Access modifiers changed from: private */
+    interface FormApply {
+        boolean apply();
     }
 
-    @Override public void onCreate(Bundle state) {
-        super.onCreate(state);
-        if (state != null) currentPage = state.getString("page", "home");
-        applyArabicLocale();
-        usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+    /* JADX INFO: Access modifiers changed from: private */
+    interface IndexAction {
+        void onChosen(int i);
+    }
 
-        uiPreferences = getSharedPreferences("hp_p1005_preferences", MODE_PRIVATE);
-        if (uiPreferences.contains("dark_mode") && !uiPreferences.contains("theme_mode")) {
-            uiPreferences.edit().putString("theme_mode",
-                    uiPreferences.getBoolean("dark_mode", false) ? "dark" : "system").apply();
+    /* JADX INFO: Access modifiers changed from: private */
+    interface ToggleAction {
+        void onToggle(boolean z);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    interface UsbResultCallback {
+        void onResult(boolean z, String str);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public UsbDevice getUsbDevice(Intent intent) {
+        Object parcelableExtra;
+        if (Build.VERSION.SDK_INT >= 33) {
+            parcelableExtra = intent.getParcelableExtra("device", UsbDevice.class);
+            return (UsbDevice) parcelableExtra;
         }
-        themeMode = uiPreferences.getString("theme_mode", "system");
-        hapticsEnabled = uiPreferences.getBoolean("haptics", true);
-        keepScreenAwake = uiPreferences.getBoolean("keep_awake", false);
-        confirmFirmwareLoad = uiPreferences.getBoolean("confirm_firmware", true);
-        nativeBlurEnabled = uiPreferences.getBoolean("native_blur", true);
+        return (UsbDevice) intent.getParcelableExtra("device");
+    }
+
+    @Override // androidx.activity.ComponentActivity, androidx.core.app.ComponentActivity, android.app.Activity
+    public void onCreate(Bundle bundle) {
+        super.onCreate(bundle);
+        if (bundle != null) {
+            this.currentPage = bundle.getString("page", "home");
+        }
+        applyAppLocale();
+        this.usbManager = (UsbManager) getSystemService("usb");
+        SharedPreferences sharedPreferences = getSharedPreferences("hp_p1005_preferences", 0);
+        this.uiPreferences = sharedPreferences;
+        if (sharedPreferences.contains("dark_mode") && !this.uiPreferences.contains("theme_mode")) {
+            this.uiPreferences.edit().putString("theme_mode", this.uiPreferences.getBoolean("dark_mode", false) ? "dark" : "system").apply();
+        }
+        this.themeMode = this.uiPreferences.getString("theme_mode", "system");
+        this.hapticsEnabled = this.uiPreferences.getBoolean("haptics", true);
+        this.keepScreenAwake = this.uiPreferences.getBoolean("keep_awake", false);
+        this.confirmFirmwareLoad = this.uiPreferences.getBoolean("confirm_firmware", true);
         applyThemeMode();
-        printPreferences = getSharedPreferences("hp_p1005_print_preferences", MODE_PRIVATE);
-        paperSize = printPreferences.getString("paper_size", "A4");
-        copies = printPreferences.getInt("copies", 1);
-        pageRange = printPreferences.getString("page_range", "all");
-        duplexMode = printPreferences.getString("duplex_mode", "off");
-        pageOrientation = printPreferences.getString("orientation", "portrait");
-        printDensity = printPreferences.getInt("density", 3);
-        draftMode = printPreferences.getBoolean("draft_mode", false);
-        fitToPage = printPreferences.getBoolean("fit_to_page", true);
-        if (activityLog.length() == 0) {
-            activityLog.append("سجل نشاط HP P1005\n");
-            activityLog.append("جاهز. صِل الطابعة بمحوّل USB OTG ثم افحص الأجهزة من صفحة الطباعة.\n");
+        FrameLayout frameLayout = new FrameLayout(this);
+        this.pageHost = frameLayout;
+        setContentView(frameLayout);
+        registerBackCallback();
+        if (bundle != null) {
+            restorePageStack(bundle.getString("page_stack", ""));
         }
-
-        Intent permission = new Intent(ACTION_USB_PERMISSION).setPackage(getPackageName());
-        int pendingFlags = PendingIntent.FLAG_UPDATE_CURRENT;
-        // UsbManager adds EXTRA_DEVICE and EXTRA_PERMISSION_GRANTED to this broadcast.
-        if (Build.VERSION.SDK_INT >= 31) {
-            pendingFlags |= PendingIntent.FLAG_MUTABLE;
-        } else if (Build.VERSION.SDK_INT >= 23) {
-            pendingFlags |= PendingIntent.FLAG_IMMUTABLE;
+        updateBackCallbackState();
+        SharedPreferences sharedPreferences2 = getSharedPreferences("hp_p1005_print_preferences", 0);
+        this.printPreferences = sharedPreferences2;
+        this.paperSize = sharedPreferences2.getString("paper_size", "A4");
+        this.copies = this.printPreferences.getInt("copies", 1);
+        this.pageRange = this.printPreferences.getString("page_range", "all");
+        this.duplexMode = this.printPreferences.getString("duplex_mode", DebugKt.DEBUG_PROPERTY_VALUE_OFF);
+        this.printDensity = this.printPreferences.getInt("density", 3);
+        this.draftMode = this.printPreferences.getBoolean("draft_mode", false);
+        this.layoutMode = this.printPreferences.getString("layout_mode", "size");
+        this.scaleModePref = this.printPreferences.getString("scale_mode", "fit");
+        this.customScalePercent = this.printPreferences.getInt("custom_scale", 100);
+        SharedPreferences sharedPreferences3 = this.printPreferences;
+        this.layoutOrientation = sharedPreferences3.getString("layout_orientation", "landscape".equals(sharedPreferences3.getString("orientation", "")) ? "landscape" : DebugKt.DEBUG_PROPERTY_VALUE_AUTO);
+        this.pagesPerSheet = this.printPreferences.getInt("pages_per_sheet", 2);
+        this.paperSource = this.printPreferences.getString("paper_source", DebugKt.DEBUG_PROPERTY_VALUE_AUTO);
+        this.sourceMapMain = this.printPreferences.getString("source_map_main", "");
+        this.sourceMapPriority = this.printPreferences.getString("source_map_priority", "");
+        this.posterCutMarks = this.printPreferences.getBoolean("poster_cut_marks", true);
+        this.posterOverlapMm = this.printPreferences.getInt("poster_overlap_mm", 5);
+        this.posterScalePercent = this.printPreferences.getFloat("poster_scale_percent", 150.0f);
+        this.readingOrder = this.printPreferences.getString("reading_order", "rtl");
+        this.bookletBinding = this.printPreferences.getString("booklet_binding", "right");
+        if (this.activityLog.length() == 0) {
+            this.activityLog.append(getString(R.string.text_027));
+            this.activityLog.append(getString(R.string.text_028));
         }
-        permissionIntent = PendingIntent.getBroadcast(this, 0, permission, pendingFlags);
-
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(ACTION_USB_PERMISSION);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
-        filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
+        this.permissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION).setPackage(getPackageName()), Build.VERSION.SDK_INT >= 31 ? 167772160 : 201326592);
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ACTION_USB_PERMISSION);
+        intentFilter.addAction("android.hardware.usb.action.USB_DEVICE_ATTACHED");
+        intentFilter.addAction("android.hardware.usb.action.USB_DEVICE_DETACHED");
         if (Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+            registerReceiver(this.usbReceiver, intentFilter, 4);
         } else {
-            registerReceiver(usbReceiver, filter);
+            registerReceiver(this.usbReceiver, intentFilter);
         }
-
-        if (!handleIncomingIntent(getIntent())) renderApp();
+        MainDebugHooks.register(this);
+        if (handleIncomingIntent(getIntent())) {
+            return;
+        }
+        renderApp();
     }
 
-    @Override protected void onSaveInstanceState(Bundle out) {
-        super.onSaveInstanceState(out);
-        out.putString("page", currentPage);
+    @Override // androidx.activity.ComponentActivity, androidx.core.app.ComponentActivity, android.app.Activity
+    protected void onSaveInstanceState(Bundle bundle) {
+        super.onSaveInstanceState(bundle);
+        bundle.putString("page", this.currentPage);
+        bundle.putString("page_stack", TextUtils.join(",", this.pageStack));
     }
 
-    @Override protected void onNewIntent(Intent intent) {
+    @Override // androidx.activity.ComponentActivity, android.app.Activity
+    protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if (!handleIncomingIntent(intent)) renderApp();
+        if (handleIncomingIntent(intent)) {
+            return;
+        }
+        renderApp();
     }
 
-    @Override public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        applyArabicLocale();
+    @Override // androidx.activity.ComponentActivity, android.app.Activity, android.content.ComponentCallbacks
+    public void onConfigurationChanged(Configuration configuration) {
+        super.onConfigurationChanged(configuration);
+        applyAppLocale();
         applyThemeMode();
         renderApp();
     }
 
-    @Override protected void attachBaseContext(Context newBase) {
-        Locale arabic = new Locale("ar");
-        Configuration override = new Configuration();
-        override.setLocale(arabic);
-        override.setLayoutDirection(arabic);
-        super.attachBaseContext(newBase.createConfigurationContext(override));
+    @Override // android.app.Activity, android.view.ContextThemeWrapper, android.content.ContextWrapper
+    protected void attachBaseContext(Context context) {
+        super.attachBaseContext(AppLanguage.wrap(context, AppLanguage.selected(context)));
     }
 
-    private boolean debuggable() {
-        return (getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+    /* JADX INFO: Access modifiers changed from: private */
+    public boolean debuggable() {
+        return (getApplicationInfo().flags & 2) != 0;
     }
 
-    private void applyArabicLocale() {
-        Locale.setDefault(new Locale("ar"));
+    private void applyAppLocale() {
+        this.appLanguage = AppLanguage.selected(this);
+        Locale locale = new Locale(this.appLanguage);
+        Locale.setDefault(locale);
+        Configuration configuration = new Configuration(getResources().getConfiguration());
+        configuration.setLocale(locale);
+        configuration.setLayoutDirection(locale);
+        getResources().updateConfiguration(configuration, getResources().getDisplayMetrics());
+        this.DIR_SIGN = isArabic() ? -1 : 1;
+        getWindow().getDecorView().setLayoutDirection(appDirection());
+    }
+
+    private boolean isArabic() {
+        return "ar".equals(this.appLanguage);
+    }
+
+    private int appDirection() {
+        return isArabic() ? 1 : 0;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showLanguageOptions() {
+        if (this.printInProgress || this.setupRunning) {
+            systemToast(getString(R.string.language_busy), 1).show();
+            return;
+        }
+        String string = getString(R.string.text_167);
+        String[] strArr = {getString(R.string.language_english), getString(R.string.language_arabic)};
+        boolean isArabic = isArabic();
+        showSelectionDialog(string, strArr, isArabic ? 1 : 0, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda73
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i) {
+                MainActivity.this.lambda$showLanguageOptions$0(i);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showLanguageOptions$0(int i) {
+        String str = i == 1 ? "ar" : "en";
+        if (str.equals(this.appLanguage)) {
+            return;
+        }
+        this.uiPreferences.edit().putString("app_language", str).apply();
+        applyAppLocale();
+        this.layoutPreviewGeneration++;
+        Future<?> future = this.layoutPreviewTask;
+        if (future != null) {
+            future.cancel(true);
+        }
+        this.layoutSettingsHost = null;
+        this.pageHost.removeAllViews();
+        this.currentPageView = null;
+        this.currentScrollView = null;
     }
 
     private void applyThemeMode() {
-        boolean systemDark = (getResources().getConfiguration().uiMode
-                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
-        darkMode = "dark".equals(themeMode) || ("system".equals(themeMode) && systemDark);
+        boolean z = true;
+        boolean z2 = (getResources().getConfiguration().uiMode & 48) == 32;
+        if (!"dark".equals(this.themeMode) && (!"system".equals(this.themeMode) || !z2)) {
+            z = false;
+        }
+        this.darkMode = z;
     }
 
     private String themeModeLabel() {
-        if ("dark".equals(themeMode)) return "داكن";
-        if ("light".equals(themeMode)) return "فاتح";
-        return "حسب النظام";
+        return "dark".equals(this.themeMode) ? getString(R.string.text_029) : "light".equals(this.themeMode) ? getString(R.string.text_030) : getString(R.string.text_031);
     }
 
     private boolean handleIncomingIntent(Intent intent) {
-        if (intent == null) return false;
-        Uri incoming = intent.getData();
-        Uri stream = null;
-        try { stream = intent.getParcelableExtra(Intent.EXTRA_STREAM); } catch (Exception ignored) {}
+        Uri uri;
+        if (intent == null) {
+            return false;
+        }
+        Uri data = intent.getData();
+        try {
+            uri = (Uri) intent.getParcelableExtra("android.intent.extra.STREAM");
+        } catch (Exception unused) {
+            uri = null;
+        }
         if (debuggable()) {
-            android.util.Log.i("HP1005-Share", "action=" + intent.getAction()
-                    + " data=" + incoming + " stream=" + stream
-                    + " extras=" + (intent.getExtras() == null ? "none" : intent.getExtras().keySet()));
+            StringBuilder sb = new StringBuilder("action=");
+            sb.append(intent.getAction());
+            sb.append(" data=");
+            sb.append(data);
+            sb.append(" stream=");
+            sb.append(uri);
+            sb.append(" extras=");
+            sb.append(intent.getExtras() == null ? "none" : intent.getExtras().keySet());
+            Log.i("HP1005-Share", sb.toString());
         } else {
-            android.util.Log.i("HP1005-Share", "action=" + intent.getAction()
-                    + " hasData=" + (incoming != null) + " hasStream=" + (stream != null));
+            StringBuilder sb2 = new StringBuilder("action=");
+            sb2.append(intent.getAction());
+            sb2.append(" hasData=");
+            sb2.append(data != null);
+            sb2.append(" hasStream=");
+            sb2.append(uri != null);
+            Log.i("HP1005-Share", sb2.toString());
         }
-        if (incoming == null && Intent.ACTION_SEND.equals(intent.getAction())) incoming = stream;
-        if (incoming != null) {
-            loadSelectedDocument(incoming);
-            return true;
+        if (data == null && "android.intent.action.SEND".equals(intent.getAction())) {
+            data = uri;
         }
-        return false;
+        if (data == null) {
+            return false;
+        }
+        loadSelectedDocument(data);
+        return true;
     }
 
-    private int dp(float value) {
-        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    /* JADX INFO: Access modifiers changed from: private */
+    public int dp(float f) {
+        return (int) ((f * getResources().getDisplayMetrics().density) + 0.5f);
     }
 
-    private int pageBackground() { return darkMode ? 0xFF101013 : 0xFFF5F5F5; }
-    private int cardColor() { return darkMode ? 0xFF1D1D21 : 0xFFFFFFFF; }
-    private int primaryColor() { return darkMode ? 0xFF4C9AFF : 0xFF0072DE; }
-    private int primaryDeep() { return darkMode ? 0xFF0E5DBF : 0xFF0E63C4; }
-    private int textPrimary() { return darkMode ? 0xFFF2F2F4 : 0xFF1B1B1B; }
-    private int textSecondary() { return darkMode ? 0xFF9C9CA4 : 0xFF7A7A80; }
-    private int eyebrowColor() { return darkMode ? 0xFF8FB9E8 : 0xFF6E84A3; }
-    private int borderColor() { return darkMode ? 0x0DFFFFFF : 0x0A0F1928; }
-    private int dividerColor() { return darkMode ? 0x12FFFFFF : 0x0F0F141E; }
-    private int tonalBg() { return darkMode ? 0xFF12283F : 0xFFE3EFFE; }
-    private int tonalText() { return darkMode ? 0xFF4C9AFF : 0xFF0072DE; }
-    private int okBg() { return darkMode ? 0xFF14301F : 0xFFE3F6EA; }
-    private int okText() { return darkMode ? 0xFF4CD686 : 0xFF14854B; }
-    private int warnBg() { return darkMode ? 0xFF33260F : 0xFFFDF0DC; }
-    private int warnText() { return darkMode ? 0xFFF0A94C : 0xFFB26A12; }
-    private int trackColor() { return darkMode ? 0xFF2A2A2F : 0xFFEDF0F4; }
-    private int iconWell() { return darkMode ? 0xFF12283F : 0xFFE3EFFE; }
+    private int pageBackground() {
+        return this.darkMode ? -16711423 : -657931;
+    }
+
+    private int cardColor() {
+        return this.darkMode ? -15198184 : -1;
+    }
+
+    private int primaryColor() {
+        return this.darkMode ? -16547330 : -16747810;
+    }
+
+    private int primaryDeep() {
+        return this.darkMode ? -16547330 : -15834172;
+    }
+
+    private int textPrimary() {
+        return this.darkMode ? -855308 : -15000805;
+    }
+
+    private int textSecondary() {
+        return this.darkMode ? -6513500 : -8750464;
+    }
+
+    private int eyebrowColor() {
+        return this.darkMode ? -7357976 : -9534301;
+    }
+
+    private int borderColor() {
+        return this.darkMode ? 234881023 : 168761640;
+    }
+
+    private int dividerColor() {
+        return this.darkMode ? 318767103 : 252646430;
+    }
+
+    private int tonalBg() {
+        return this.darkMode ? -15587265 : -1839106;
+    }
+
+    private int tonalText() {
+        return this.darkMode ? -16547330 : -16747810;
+    }
+
+    private int okBg() {
+        return this.darkMode ? -15454177 : -1837334;
+    }
+
+    private int okText() {
+        return this.darkMode ? -11741562 : -15432373;
+    }
+
+    private int warnBg() {
+        return this.darkMode ? -13425137 : -134948;
+    }
+
+    private int warnText() {
+        return this.darkMode ? -1005236 : -5084654;
+    }
+
+    private int trackColor() {
+        return this.darkMode ? -14013905 : -1183500;
+    }
+
+    private int iconWell() {
+        return this.darkMode ? -15587265 : -1839106;
+    }
 
     private LinearLayout vertical() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        return layout;
+        LinearLayout linearLayout = new LinearLayout(this);
+        linearLayout.setOrientation(1);
+        return linearLayout;
     }
 
     private LinearLayout horizontal() {
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.HORIZONTAL);
-        layout.setGravity(Gravity.CENTER_VERTICAL);
-        return layout;
+        LinearLayout linearLayout = new LinearLayout(this);
+        linearLayout.setOrientation(0);
+        linearLayout.setGravity(16);
+        return linearLayout;
     }
 
-    private LinearLayout.LayoutParams margin(int left, int top, int right, int bottom) {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
-        params.setMargins(dp(left), dp(top), dp(right), dp(bottom));
-        return params;
+    private LinearLayout.LayoutParams margin(int i, int i2, int i3, int i4) {
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -2);
+        layoutParams.setMargins(dp(i), dp(i2), dp(i3), dp(i4));
+        return layoutParams;
     }
 
-    private GradientDrawable rounded(int startColor, int endColor, int strokeColor, int radius) {
-        GradientDrawable drawable = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{startColor, endColor});
-        drawable.setCornerRadius(dp(radius));
-        if (strokeColor != 0) drawable.setStroke(dp(1), strokeColor);
-        return drawable;
-    }
-
-    private GradientDrawable flat(int color, int radius) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setColor(color);
-        drawable.setCornerRadius(dp(radius));
-        return drawable;
-    }
-
-    private GradientDrawable verticalGradient(int topColor, int bottomColor, int radius) {
-        GradientDrawable drawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[]{topColor, bottomColor});
-        drawable.setCornerRadius(dp(radius));
-        return drawable;
-    }
-
-    private TextView styledText(String value, float size, int color, boolean bold) {
-        TextView text = new TextView(this);
-        text.setText(value);
-        text.setTextSize(size);
-        text.setTextColor(color);
-        text.setGravity(Gravity.CENTER_VERTICAL);
-        text.setFontFeatureSettings("kern");
-        text.setIncludeFontPadding(true);
-        text.setTypeface(Typeface.create(bold ? "sans-serif-medium" : "sans-serif",
-                bold ? Typeface.BOLD : Typeface.NORMAL));
-        return text;
-    }
-
-    private TextView label(String value, float size, int color, boolean bold) {
-        return styledText(value, size, color, bold);
-    }
-
-    private ImageView iconView(int drawableRes, int tintColor, int sizeDp) {
-        ImageView icon = new ImageView(this);
-        icon.setImageResource(drawableRes);
-        icon.setColorFilter(tintColor, PorterDuff.Mode.SRC_IN);
-        icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp));
-        icon.setLayoutParams(params);
-        return icon;
-    }
-
-    private Button bigPrimaryButton(String title) {
-        Button button = new Button(this);
-        button.setText(title);
-        button.setAllCaps(false);
-        button.setTextSize(16);
-        button.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
-        button.setTextColor(Color.WHITE);
-        button.setBackground(verticalGradient(primaryColor(), primaryDeep(), 27));
-        button.setMinHeight(dp(56));
-        button.setPadding(dp(14), 0, dp(14), 0);
-        button.setHapticFeedbackEnabled(hapticsEnabled);
-        if (Build.VERSION.SDK_INT >= 21) {
-            button.setElevation(dp(2));
-            button.setStateListAnimator(null);
+    private GradientDrawable rounded(int i, int i2, int i3, int i4) {
+        GradientDrawable gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{i, i2});
+        gradientDrawable.setCornerRadius(dp(i4));
+        if (i3 != 0) {
+            gradientDrawable.setStroke(dp(1.0f), i3);
         }
-        return button;
+        return gradientDrawable;
     }
 
-    private Button tonalButton(String title, float sizeSp) {
+    private GradientDrawable flat(int i, int i2) {
+        GradientDrawable gradientDrawable = new GradientDrawable();
+        gradientDrawable.setColor(i);
+        gradientDrawable.setCornerRadius(dp(i2));
+        return gradientDrawable;
+    }
+
+    private GradientDrawable verticalGradient(int i, int i2, int i3) {
+        GradientDrawable gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{i, i2});
+        gradientDrawable.setCornerRadius(dp(i3));
+        return gradientDrawable;
+    }
+
+    private TextView styledText(String str, float f, int i, boolean z) {
+        TextView textView = new TextView(this);
+        textView.setText(str);
+        textView.setTextSize(f);
+        textView.setTextColor(i);
+        textView.setGravity(16);
+        textView.setFontFeatureSettings("kern");
+        textView.setIncludeFontPadding(true);
+        textView.setTypeface(Typeface.create(z ? "sans-serif-medium" : "sans-serif", z ? 1 : 0));
+        return textView;
+    }
+
+    private TextView label(String str, float f, int i, boolean z) {
+        return styledText(str, f, i, z);
+    }
+
+    private ImageView iconView(int i, int i2, int i3) {
+        ImageView imageView = new ImageView(this);
+        imageView.setImageResource(i);
+        if (i == R.drawable.ic_chevron_left) {
+            imageView.setScaleX(isArabic() ? 1.0f : -1.0f);
+        }
+        imageView.setColorFilter(i2, PorterDuff.Mode.SRC_IN);
+        imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        float f = i3;
+        imageView.setLayoutParams(new LinearLayout.LayoutParams(dp(f), dp(f)));
+        return imageView;
+    }
+
+    private Button bigPrimaryButton(String str) {
         Button button = new Button(this);
-        button.setText(title);
+        button.setText(str);
         button.setAllCaps(false);
-        button.setTextSize(sizeSp);
-        button.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
-        button.setTextColor(tonalText());
-        button.setBackground(flat(tonalBg(), 24));
-        button.setMinHeight(dp(52));
-        button.setPadding(dp(14), 0, dp(14), 0);
-        button.setHapticFeedbackEnabled(hapticsEnabled);
-        if (Build.VERSION.SDK_INT >= 21) button.setStateListAnimator(null);
+        button.setTextSize(16.0f);
+        button.setTypeface(Typeface.create("sans-serif-medium", 1));
+        button.setTextColor(-1);
+        button.setBackground(flat(primaryColor(), 28));
+        button.setMinHeight(dp(56.0f));
+        button.setPadding(dp(14.0f), 0, dp(14.0f), 0);
+        button.setHapticFeedbackEnabled(this.hapticsEnabled);
+        button.setStateListAnimator(null);
         return button;
     }
 
-    private Toast systemToast(String message, int duration) {
-        android.content.Context themed = new android.view.ContextThemeWrapper(getApplicationContext(),
-                darkMode ? android.R.style.Theme_DeviceDefault
-                        : android.R.style.Theme_DeviceDefault_Light);
-        return Toast.makeText(themed, message, duration);
+    private Button tonalButton(String str, float f) {
+        Button button = new Button(this);
+        button.setText(str);
+        button.setAllCaps(false);
+        button.setTextSize(f);
+        button.setTypeface(Typeface.create("sans-serif-medium", 1));
+        button.setTextColor(tonalText());
+        button.setBackground(rounded(0, 0, tonalText(), 26));
+        button.setMinHeight(dp(52.0f));
+        button.setPadding(dp(14.0f), 0, dp(14.0f), 0);
+        button.setHapticFeedbackEnabled(this.hapticsEnabled);
+        button.setStateListAnimator(null);
+        return button;
+    }
+
+    private Toast systemToast(String str, int i) {
+        return Toast.makeText(new ContextThemeWrapper(getApplicationContext(), this.darkMode ? android.R.style.Theme_DeviceDefault : android.R.style.Theme_DeviceDefault_Light), str, i);
     }
 
     private LinearLayout card() {
-        LinearLayout card = vertical();
-        card.setPadding(dp(18), dp(18), dp(18), dp(18));
-        card.setBackground(flat(cardColor(), 26));
-        card.setClipToOutline(true);
-        // No elevation: the reviewed cards are flat; a 1dp shadow ring read as thin
-        // dirty edge lines on the light theme.
-        return card;
+        LinearLayout vertical = vertical();
+        vertical.setPadding(dp(18.0f), dp(18.0f), dp(18.0f), dp(18.0f));
+        vertical.setBackground(flat(cardColor(), 26));
+        vertical.setClipToOutline(true);
+        return vertical;
     }
 
-    private TextView statusPill(boolean connected) {
-        String value = connected ? "متصلة" : "بانتظار الاتصال";
-        TextView pill = label("●  " + value, 11, connected ? okText() : warnText(), true);
-        pill.setGravity(Gravity.CENTER);
-        pill.setPadding(dp(10), dp(5), dp(10), dp(5));
-        pill.setBackground(flat(connected ? okBg() : warnBg(), 16));
-        return pill;
-    }
-
-    private TextView sectionLabel(String value) {
-        TextView label = label(value, 13, textPrimary(), true);
-        label.setPadding(dp(2), 0, dp(2), 0);
+    private TextView statusPill(boolean z) {
+        TextView label = label("●  " + getString(z ? R.string.text_032 : R.string.text_033), 13.0f, z ? okText() : warnText(), true);
+        label.setGravity(17);
+        label.setPadding(dp(10.0f), dp(5.0f), dp(10.0f), dp(5.0f));
+        label.setBackground(flat(z ? okBg() : warnBg(), 16));
         return label;
     }
 
-    private boolean isTabPage(String page) {
-        return "home".equals(page) || "print".equals(page) || "queue".equals(page);
+    private TextView sectionLabel(String str) {
+        TextView label = label(str, 13.0f, textPrimary(), true);
+        label.setPadding(dp(2.0f), 0, dp(2.0f), 0);
+        return label;
+    }
+
+    private boolean isTabPage(String str) {
+        return "home".equals(str) || "print".equals(str) || "queue".equals(str);
     }
 
     private boolean wideLayout() {
         return getResources().getConfiguration().screenWidthDp >= 600;
     }
 
-    private void addPair(LinearLayout content, View first, View second) {
-        addPair(content, first, second, 1f, 1f);
+    private void addPair(LinearLayout linearLayout, View view, View view2) {
+        addPair(linearLayout, view, view2, 1.0f, 1.0f);
     }
 
-    private void addPair(LinearLayout content, View first, View second,
-                         float firstWeight, float secondWeight) {
+    private void addPair(LinearLayout linearLayout, View view, View view2, float f, float f2) {
         if (!wideLayout()) {
-            content.addView(first, margin(0, 0, 0, 14));
-            content.addView(second, margin(0, 0, 0, 14));
+            linearLayout.addView(view, margin(0, 0, 0, 14));
+            linearLayout.addView(view2, margin(0, 0, 0, 14));
             return;
         }
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.TOP);
-        row.addView(first, new LinearLayout.LayoutParams(0, -2, firstWeight));
-        LinearLayout.LayoutParams secondParams = new LinearLayout.LayoutParams(0, -2, secondWeight);
-        secondParams.setMarginStart(dp(16));
-        row.addView(second, secondParams);
-        content.addView(row, margin(0, 0, 0, 14));
+        LinearLayout linearLayout2 = new LinearLayout(this);
+        linearLayout2.setOrientation(0);
+        linearLayout2.setGravity(48);
+        linearLayout2.addView(view, new LinearLayout.LayoutParams(0, -2, f));
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, -2, f2);
+        layoutParams.setMarginStart(dp(16.0f));
+        linearLayout2.addView(view2, layoutParams);
+        linearLayout.addView(linearLayout2, margin(0, 0, 0, 14));
     }
 
-    private void renderApp() {
-        int bg = pageBackground();
-        getWindow().setStatusBarColor(bg);
-        getWindow().setNavigationBarColor(bg);
-        getWindow().getDecorView().setSystemUiVisibility(darkMode ? 0 :
-                (View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR));
-        if (keepScreenAwake) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        FrameLayout root = new FrameLayout(this);
-        root.setBackgroundColor(bg);
-        root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        ScrollView scroll = new ScrollView(this);
-        scroll.setFillViewport(false);
-        scroll.setClipToPadding(false);
-        scroll.setVerticalScrollBarEnabled(false);
-        scroll.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
-        LinearLayout content = vertical();
-        boolean tabPage = isTabPage(currentPage);
-        // Landscape/wide two-column pages halve the column heights, so 118dp of bottom
-        // padding can leave ~zero scroll range and the waiting card stuck under the
-        // nav capsule. Wide layouts need enough range to lift the last row clear.
-        content.setPadding(dp(20), dp(16), dp(20), dp(tabPage ? (wideLayout() ? 210 : 118) : 42));
-        buildPage(content);
-        scroll.addView(content, new ScrollView.LayoutParams(-1, -2));
-        boolean wide = wideLayout();
-        boolean roomy = wide && ("home".equals(currentPage) || "print".equals(currentPage)
-                || "queue".equals(currentPage) || "preview".equals(currentPage)
-                || "settings".equals(currentPage));
-        int windowWidthDp = getResources().getConfiguration().screenWidthDp;
-        int cap = !wide ? -1 : dp(Math.min(roomy ? 880 : 640, windowWidthDp));
-        root.addView(scroll, new FrameLayout.LayoutParams(cap == -1 ? -1 : cap, -1,
-                Gravity.CENTER_HORIZONTAL));
-
-        if (tabPage) {
-            FrameLayout.LayoutParams navParams = new FrameLayout.LayoutParams(-2, -2,
-                    Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
-            navParams.setMargins(0, 0, 0, dp(16));
-            root.addView(buildCapsuleNav(), navParams);
+    /* JADX INFO: Access modifiers changed from: private */
+    public void renderApp() {
+        LinearLayout linearLayout;
+        if ("layout".equals(this.currentPage) && (linearLayout = this.layoutSettingsHost) != null && linearLayout.isAttachedToWindow()) {
+            refreshLayoutSettings();
+        } else {
+            saveScrollPosition();
+            swapToPage(this.currentPage, 0);
         }
-        setContentView(root);
     }
 
-    private void pageAppBar(LinearLayout content, String title) {
-        LinearLayout bar = horizontal();
-        bar.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout back = new LinearLayout(this);
-        back.setGravity(Gravity.CENTER);
-        back.setBackground(flat(cardColor(), 19));
-        back.setContentDescription("رجوع");
-        // Flat like the reviewed design (no elevation ring artifacts).
-        ImageView arrow = new ImageView(this);
-        arrow.setImageResource(R.drawable.ic_arrow_back);
-        arrow.setColorFilter(textPrimary(), PorterDuff.Mode.SRC_IN);
-        back.addView(arrow, new LinearLayout.LayoutParams(dp(20), dp(20)));
-        back.setClickable(true);
-        back.setFocusable(true);
-        back.setHapticFeedbackEnabled(hapticsEnabled);
-        back.setOnClickListener(v -> { performTapFeedback(v); navigateBack(); });
-        bar.addView(back, new LinearLayout.LayoutParams(dp(38), dp(38)));
-        TextView barTitle = label(title, 17, textPrimary(), true);
-        LinearLayout.LayoutParams barTitleParams = new LinearLayout.LayoutParams(-2, -2);
-        barTitleParams.setMarginStart(dp(12));
-        bar.addView(barTitle, barTitleParams);
-        content.addView(bar, margin(0, 2, 0, 14));
+    private FrameLayout buildCurrentPageView() {
+        int i;
+        int dp;
+        int pageBackground = pageBackground();
+        getWindow().setStatusBarColor(pageBackground);
+        getWindow().setNavigationBarColor(pageBackground);
+        boolean z = false;
+        getWindow().getDecorView().setSystemUiVisibility(this.darkMode ? 0 : 8208);
+        if (this.keepScreenAwake) {
+            getWindow().addFlags(128);
+        } else {
+            getWindow().clearFlags(128);
+        }
+        FrameLayout frameLayout = new FrameLayout(this);
+        frameLayout.setBackgroundColor(pageBackground);
+        frameLayout.setLayoutDirection(appDirection());
+        FadeScrollView fadeScrollView = new FadeScrollView(this);
+        fadeScrollView.setFillViewport(false);
+        fadeScrollView.setClipToPadding(false);
+        fadeScrollView.setVerticalScrollBarEnabled(false);
+        fadeScrollView.setOverScrollMode(1);
+        LinearLayout vertical = vertical();
+        boolean isTabPage = isTabPage(this.currentPage);
+        if (isTabPage) {
+            i = wideLayout() ? 210 : 118;
+        } else {
+            i = 42;
+        }
+        vertical.setPadding(dp(20.0f), dp(16.0f), dp(20.0f), dp(i));
+        fadeScrollView.setBottomFadeHeight(isTabPage ? dp(56.0f) : 0);
+        buildPage(vertical);
+        fadeScrollView.addView(vertical, new FrameLayout.LayoutParams(-1, -2));
+        boolean wideLayout = wideLayout();
+        if (wideLayout && ("home".equals(this.currentPage) || "print".equals(this.currentPage) || "queue".equals(this.currentPage) || "preview".equals(this.currentPage) || "settings".equals(this.currentPage) || "layout".equals(this.currentPage))) {
+            z = true;
+        }
+        int i2 = getResources().getConfiguration().screenWidthDp;
+        if (wideLayout) {
+            dp = dp(Math.min("layout".equals(this.currentPage) ? 1280 : z ? 880 : 640, i2));
+        } else {
+            dp = -1;
+        }
+        if (dp == -1) {
+            dp = -1;
+        }
+        frameLayout.addView(fadeScrollView, new FrameLayout.LayoutParams(dp, -1, 1));
+        this.currentScrollView = fadeScrollView;
+        return frameLayout;
     }
 
-    private LinearLayout buildCapsuleNav() {
-        LinearLayout capsule = horizontal();
-        capsule.setGravity(Gravity.CENTER);
-        capsule.setPadding(dp(8), dp(8), dp(8), dp(8));
-        // Reviewed proposal: frosted translucent capsule (55% tint). Real backdrop
-        // blur behind it is staged separately with runtime verification; this keeps
-        // the reviewed tint/geometry on every API level.
-        capsule.setBackground(flat(darkMode ? 0x8C1C1C20 : 0x8CFFFFFF, 38));
-        capsule.setClipToOutline(true);
-        if (Build.VERSION.SDK_INT >= 21) capsule.setElevation(dp(14));
-        String selected = selectedBottomTab();
-        capsule.addView(navItem(R.drawable.ic_nav_home, "الرئيسية", "home", "home".equals(selected)));
-        capsule.addView(navItem(R.drawable.ic_nav_printer, "طباعة", "print", "print".equals(selected)));
-        capsule.addView(navItem(R.drawable.ic_nav_queue, "قائمة الطباعة", "queue", "queue".equals(selected)));
-        return capsule;
+    private static Interpolator oneUiEase() {
+        return new PathInterpolator(0.15f, 0.5f, 0.1f, 0.9f);
+    }
+
+    private static Interpolator oneUiParallaxEase() {
+        return new PathInterpolator(0.15f, 0.0f, 0.3f, 0.85f);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public boolean reducedMotion() {
+        try {
+            return Settings.Global.getFloat(getContentResolver(), "animator_duration_scale", 1.0f) == 0.0f;
+        } catch (Exception unused) {
+            return false;
+        }
+    }
+
+    /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
+    private int tabOrder(String str) {
+        int z;
+        str.hashCode();
+        switch (str.hashCode()) {
+            case 3208415:
+                if (str.equals("home")) {
+                    z = 0;
+                    break;
+                }
+                z = -1;
+                break;
+            case 106934957:
+                if (str.equals("print")) {
+                    z = 1;
+                    break;
+                }
+                z = -1;
+                break;
+            case 107944209:
+                if (str.equals("queue")) {
+                    z = 2;
+                    break;
+                }
+                z = -1;
+                break;
+            default:
+                z = -1;
+                break;
+        }
+        switch (z) {
+            case 0:
+                return 0;
+            case 1:
+                return 1;
+            case 2:
+                return 2;
+            default:
+                return -1;
+        }
+    }
+
+    private void saveScrollPosition() {
+        String str;
+        ScrollView scrollView = this.currentScrollView;
+        if (scrollView == null || (str = this.currentPage) == null) {
+            return;
+        }
+        this.scrollPositions.put(str, Integer.valueOf(scrollView.getScrollY()));
+    }
+
+    private void restoreScrollPosition(String str) {
+        ScrollView scrollView;
+        final Integer num = this.scrollPositions.get(str);
+        if (num == null || num.intValue() <= 0 || (scrollView = this.currentScrollView) == null) {
+            return;
+        }
+        scrollView.post(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda75
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$restoreScrollPosition$1(num);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$restoreScrollPosition$1(Integer num) {
+        this.currentScrollView.scrollTo(0, num.intValue());
+    }
+
+    private void restorePageStack(String str) {
+        this.pageStack.clear();
+        if (str == null || str.isEmpty()) {
+            return;
+        }
+        String[] split = str.split(",");
+        for (int length = split.length - 1; length >= 0; length--) {
+            if (!split[length].isEmpty()) {
+                this.pageStack.push(split[length]);
+            }
+        }
+    }
+
+    private void openPage(String str) {
+        if (str.equals(this.currentPage)) {
+            renderApp();
+            return;
+        }
+        saveScrollPosition();
+        int r1 = 3;
+        if (isTabPage(str)) {
+            r1 = tabOrder(str) <= tabOrder(this.currentPage) ? 4 : 3;
+            this.pageStack.clear();
+            if (isTabPage(this.currentPage)) {
+                r1 = 0;
+            }
+        } else {
+            this.pageStack.push(this.currentPage);
+            this.scrollPositions.remove(str);
+        }
+        this.currentPage = str;
+        swapToPage(str, r1);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void navigateBack() {
+        if (this.pageStack.isEmpty() && "home".equals(this.currentPage)) {
+            return;
+        }
+        saveScrollPosition();
+        String pop = this.pageStack.isEmpty() ? "home" : this.pageStack.pop();
+        this.currentPage = pop;
+        swapToPage(pop, 4);
+    }
+
+    private void swapToPage(final String str, int i) {
+        final FrameLayout buildCurrentPageView = buildCurrentPageView();
+        final View view = this.currentPageView;
+        int r10 = this.pageHost.getWidth();
+        boolean z = (view == null || i == 0 || reducedMotion() || this.pageHost.getWidth() <= 0) ? false : true;
+        boolean z2 = i == 3 || i == 4;
+        int i2 = i == 4 ? -1 : 1;
+        if (z) {
+            buildCurrentPageView.setTranslationX(i2 * r10 * this.DIR_SIGN);
+        }
+        this.pageHost.addView(buildCurrentPageView);
+        this.currentPageView = buildCurrentPageView;
+        if (isTabPage(str)) {
+            showCapsuleNav(buildCurrentPageView);
+        } else if (z && this.capsuleDialog != null) {
+            fadeOutCapsuleAndDismiss();
+        } else {
+            dismissCapsuleOverlay();
+        }
+        if (!z) {
+            if (view != null) {
+                this.pageHost.removeView(view);
+            }
+            restoreScrollPosition(str);
+            updateBackCallbackState();
+            return;
+        }
+        Runnable runnable = new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda14
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$swapToPage$2(view, buildCurrentPageView, str);
+            }
+        };
+        if (z2) {
+            animateProp(buildCurrentPageView, View.TRANSLATION_X, buildCurrentPageView.getTranslationX(), 0.0f, 345L, oneUiEase(), runnable);
+            animateProp(view, View.TRANSLATION_X, 0.0f, (-i2) * r10 * this.DIR_SIGN, 345L, oneUiEase(), null);
+        } else {
+            runnable.run();
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$swapToPage$2(View view, FrameLayout frameLayout, String str) {
+        this.pageHost.removeView(view);
+        if (this.currentPageView != frameLayout) {
+            return;
+        }
+        restoreScrollPosition(str);
+        updateBackCallbackState();
+    }
+
+    private ObjectAnimator animateProp(View view, Property<View, Float> property, float f, float f2, long j, Interpolator interpolator, final Runnable runnable) {
+        ObjectAnimator ofFloat = ObjectAnimator.ofFloat(view, property, f, f2);
+        ofFloat.setDuration(j);
+        if (interpolator != null) {
+            ofFloat.setInterpolator(interpolator);
+        }
+        if (runnable != null) {
+            ofFloat.addListener(new AnimatorListenerAdapter() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.2
+                @Override // android.animation.AnimatorListenerAdapter, android.animation.Animator.AnimatorListener
+                public void onAnimationEnd(Animator animator) {
+                    runnable.run();
+                }
+            });
+        }
+        ofFloat.start();
+        return ofFloat;
+    }
+
+    private void fadeOutCapsuleAndDismiss() {
+        final Dialog dialog = this.capsuleDialog;
+        if (dialog == null || !dialog.isShowing() || dialog.getWindow() == null || reducedMotion()) {
+            dismissCapsuleOverlay();
+            return;
+        }
+        final Window window = dialog.getWindow();
+        final WindowManager.LayoutParams attributes = window.getAttributes();
+        ValueAnimator ofFloat = ValueAnimator.ofFloat(1.0f, 0.0f);
+        ofFloat.setDuration(120L);
+        ofFloat.setInterpolator(oneUiParallaxEase());
+        ofFloat.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda63
+            @Override // android.animation.ValueAnimator.AnimatorUpdateListener
+            public final void onAnimationUpdate(ValueAnimator valueAnimator) {
+                MainActivity.lambda$fadeOutCapsuleAndDismiss$3(attributes, window, valueAnimator);
+            }
+        });
+        ofFloat.addListener(new AnimatorListenerAdapter() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.3
+            @Override // android.animation.AnimatorListenerAdapter, android.animation.Animator.AnimatorListener
+            public void onAnimationEnd(Animator animator) {
+                attributes.alpha = 1.0f;
+                window.setAttributes(attributes);
+                if (MainActivity.this.capsuleDialog == dialog) {
+                    MainActivity.this.dismissCapsuleOverlay();
+                }
+            }
+        });
+        ofFloat.start();
+    }
+
+    static /* synthetic */ void lambda$fadeOutCapsuleAndDismiss$3(WindowManager.LayoutParams layoutParams, Window window, ValueAnimator valueAnimator) {
+        layoutParams.alpha = ((Float) valueAnimator.getAnimatedValue()).floatValue();
+        window.setAttributes(layoutParams);
+    }
+
+    private void registerBackCallback() {
+        this.predictiveBackCallback = new OnBackPressedCallback(false) { // from class: com.mohamedelnaggar.hpp1005.MainActivity.4
+            @Override // androidx.activity.OnBackPressedCallback
+            public void handleOnBackStarted(BackEventCompat backEventCompat) {
+                int width;
+                if (MainActivity.this.debuggable()) {
+                    Log.i("HP1005-Back", "started");
+                }
+                MainActivity.this.settleInFlightBackCommit();
+                if (MainActivity.this.pageStack.isEmpty() || MainActivity.this.reducedMotion() || (width = MainActivity.this.pageHost.getWidth()) <= 0) {
+                    return;
+                }
+                MainActivity mainActivity = MainActivity.this;
+                mainActivity.backGesturePrevView = mainActivity.buildPageViewFor((String) mainActivity.pageStack.peek());
+                MainActivity.this.backGesturePrevView.setTranslationX(((-width) / 4.0f) * MainActivity.this.DIR_SIGN);
+                MainActivity.this.backGesturePrevView.setAlpha(0.73f);
+                MainActivity.this.pageHost.addView(MainActivity.this.backGesturePrevView, 0);
+                MainActivity.this.backGestureProgress = 0.0f;
+            }
+
+            @Override // androidx.activity.OnBackPressedCallback
+            public void handleOnBackProgressed(BackEventCompat backEventCompat) {
+                if (MainActivity.this.debuggable()) {
+                    Log.i("HP1005-Back", "progressed " + backEventCompat.getProgress());
+                }
+                if (MainActivity.this.backGesturePrevView == null || MainActivity.this.currentPageView == null) {
+                    return;
+                }
+                int width = MainActivity.this.pageHost.getWidth();
+                MainActivity.this.backGestureProgress = backEventCompat.getProgress();
+                MainActivity.this.currentPageView.setTranslationX(MainActivity.this.DIR_SIGN * width * MainActivity.this.backGestureProgress);
+                MainActivity.this.backGesturePrevView.setTranslationX(((-width) / 4.0f) * MainActivity.this.DIR_SIGN * (1.0f - MainActivity.this.backGestureProgress));
+                MainActivity.this.backGesturePrevView.setAlpha((MainActivity.this.backGestureProgress * 0.27f) + 0.73f);
+            }
+
+            @Override // androidx.activity.OnBackPressedCallback
+            public void handleOnBackPressed() {
+                MainActivity.this.settleInFlightBackCommit();
+                if (MainActivity.this.debuggable()) {
+                    Log.i("HP1005-Back", MainActivity.this.backGesturePrevView != null ? "gesture commit" : "plain back pressed");
+                }
+                if (MainActivity.this.backGesturePrevView != null) {
+                    MainActivity.this.finishBackGesture();
+                } else {
+                    MainActivity.this.navigateBack();
+                }
+            }
+
+            @Override // androidx.activity.OnBackPressedCallback
+            public void handleOnBackCancelled() {
+                if (MainActivity.this.debuggable()) {
+                    Log.i("HP1005-Back", "cancelled");
+                }
+                MainActivity.this.cancelBackGesture();
+            }
+        };
+        getOnBackPressedDispatcher().addCallback(this, this.predictiveBackCallback);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public FrameLayout buildPageViewFor(String str) {
+        String str2 = this.currentPage;
+        ScrollView scrollView = this.currentScrollView;
+        this.currentPage = str;
+        FrameLayout buildCurrentPageView = buildCurrentPageView();
+        this.currentPage = str2;
+        this.currentScrollView = scrollView;
+        return buildCurrentPageView;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void finishBackGesture() {
+        View view = this.currentPageView;
+        final FrameLayout frameLayout = (FrameLayout) this.backGesturePrevView;
+        this.backGesturePrevView = null;
+        int width = this.pageHost.getWidth();
+        if (view == null || frameLayout == null || width <= 0 || reducedMotion()) {
+            lambda$finishBackGesture$4(frameLayout);
+            return;
+        }
+        this.pendingBackArrived = frameLayout;
+        this.backCommitAnimating = true;
+        this.backAnimators.add(animateProp(view, View.TRANSLATION_X, view.getTranslationX(), width * this.DIR_SIGN, Math.max(60L, (long) ((1.0f - this.backGestureProgress) * 345.0f)), oneUiEase(), new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda16
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$finishBackGesture$4(frameLayout);
+            }
+        }));
+        this.backAnimators.add(animateProp(frameLayout, View.TRANSLATION_X, frameLayout.getTranslationX(), 0.0f, 120L, oneUiParallaxEase(), null));
+        this.backAnimators.add(animateProp(frameLayout, View.ALPHA, frameLayout.getAlpha(), 1.0f, 75L, null, null));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void settleInFlightBackCommit() {
+        FrameLayout frameLayout;
+        if (!this.backCommitAnimating || (frameLayout = this.pendingBackArrived) == null) {
+            return;
+        }
+        lambda$finishBackGesture$4(frameLayout);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    /* renamed from: commitBackGesture, reason: merged with bridge method [inline-methods] */
+    public void lambda$finishBackGesture$4(FrameLayout frameLayout) {
+        if (frameLayout == null || this.backCommitting) {
+            return;
+        }
+        this.backCommitting = true;
+        for (int size = this.backAnimators.size() - 1; size >= 0; size--) {
+            this.backAnimators.get(size).cancel();
+        }
+        this.backAnimators.clear();
+        this.backCommitAnimating = false;
+        this.pendingBackArrived = null;
+        this.backGesturePrevView = null;
+        frameLayout.setTranslationX(0.0f);
+        frameLayout.setAlpha(1.0f);
+        saveScrollPosition();
+        View view = this.currentPageView;
+        if (view != null && view != frameLayout) {
+            this.pageHost.removeView(view);
+        }
+        this.currentPageView = frameLayout;
+        this.currentPage = this.pageStack.isEmpty() ? "home" : this.pageStack.pop();
+        this.currentScrollView = findScrollView(frameLayout);
+        if (isTabPage(this.currentPage)) {
+            showCapsuleNav(frameLayout);
+        } else {
+            dismissCapsuleOverlay();
+        }
+        restoreScrollPosition(this.currentPage);
+        updateBackCallbackState();
+        this.backCommitting = false;
+    }
+
+    private ScrollView findScrollView(View view) {
+        if (view instanceof ScrollView) {
+            return (ScrollView) view;
+        }
+        if (!(view instanceof ViewGroup)) {
+            return null;
+        }
+        ViewGroup viewGroup = (ViewGroup) view;
+        for (int i = 0; i < viewGroup.getChildCount(); i++) {
+            ScrollView findScrollView = findScrollView(viewGroup.getChildAt(i));
+            if (findScrollView != null) {
+                return findScrollView;
+            }
+        }
+        return null;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void cancelBackGesture() {
+        final View view = this.backGesturePrevView;
+        this.backGesturePrevView = null;
+        int width = this.pageHost.getWidth();
+        if (this.currentPageView == null || view == null || width <= 0 || reducedMotion()) {
+            View view2 = this.currentPageView;
+            if (view2 != null) {
+                view2.setTranslationX(0.0f);
+            }
+            if (view != null) {
+                this.pageHost.removeView(view);
+                return;
+            }
+            return;
+        }
+        animateProp(this.currentPageView, View.TRANSLATION_X, this.currentPageView.getTranslationX(), 0.0f, Math.max(60L, (long) (this.backGestureProgress * 345.0f)), oneUiEase(), new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda142
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$cancelBackGesture$5(view);
+            }
+        });
+        animateProp(view, View.TRANSLATION_X, view.getTranslationX(), ((-width) / 4.0f) * this.DIR_SIGN, 120L, oneUiParallaxEase(), null);
+        animateProp(view, View.ALPHA, view.getAlpha(), 0.73f, 75L, null, null);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$cancelBackGesture$5(View view) {
+        this.pageHost.removeView(view);
+    }
+
+    private void updateBackCallbackState() {
+        OnBackPressedCallback onBackPressedCallback = this.predictiveBackCallback;
+        if (onBackPressedCallback != null) {
+            onBackPressedCallback.setEnabled((this.pageStack.isEmpty() && "home".equals(this.currentPage)) ? false : true);
+        }
+    }
+
+    private void pageAppBar(LinearLayout linearLayout, String str) {
+        LinearLayout horizontal = horizontal();
+        horizontal.setGravity(16);
+        LinearLayout linearLayout2 = new LinearLayout(this);
+        linearLayout2.setGravity(17);
+        linearLayout2.setBackground(flat(cardColor(), 19));
+        linearLayout2.setContentDescription(getString(R.string.text_034));
+        ImageView imageView = new ImageView(this);
+        imageView.setImageResource(R.drawable.ic_arrow_back);
+        imageView.setColorFilter(textPrimary(), PorterDuff.Mode.SRC_IN);
+        linearLayout2.addView(imageView, new LinearLayout.LayoutParams(dp(20.0f), dp(20.0f)));
+        linearLayout2.setClickable(true);
+        linearLayout2.setFocusable(true);
+        linearLayout2.setHapticFeedbackEnabled(this.hapticsEnabled);
+        linearLayout2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda35
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$pageAppBar$6(view);
+            }
+        });
+        horizontal.addView(linearLayout2, new LinearLayout.LayoutParams(dp(38.0f), dp(38.0f)));
+        View label = label(str, 20.0f, textPrimary(), true);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-2, -2);
+        layoutParams.setMarginStart(dp(12.0f));
+        horizontal.addView(label, layoutParams);
+        linearLayout.addView(horizontal, margin(0, 2, 0, 14));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$pageAppBar$6(View view) {
+        performTapFeedback(view);
+        navigateBack();
+    }
+
+    private static class FadeScrollView extends ScrollView {
+        private int fadeHeight;
+        private final Paint fadePaint;
+
+        FadeScrollView(Context context) {
+            super(context);
+            Paint paint = new Paint(1);
+            this.fadePaint = paint;
+            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));
+        }
+
+        void setBottomFadeHeight(int i) {
+            if (this.fadeHeight != i) {
+                this.fadeHeight = i;
+                invalidate();
+            }
+        }
+
+        @Override // android.view.ViewGroup, android.view.View
+        protected void dispatchDraw(Canvas canvas) {
+            if (this.fadeHeight <= 0 || getHeight() <= 0) {
+                super.dispatchDraw(canvas);
+                return;
+            }
+            int min = Math.min(this.fadeHeight, getHeight() / 2);
+            int scrollX = getScrollX();
+            float f = scrollX;
+            int r3 = getScrollY();
+            int saveLayer = canvas.saveLayer(f, getScrollY(), getWidth() + scrollX, getHeight() + r3, null);
+            super.dispatchDraw(canvas);
+            this.fadePaint.setShader(new LinearGradient(0.0f, (getHeight() + r3) - min, 0.0f, getHeight() + r3, new int[]{-1, -1275068417, 654311423, ViewCompat.MEASURED_SIZE_MASK}, new float[]{0.0f, 0.35f, 0.75f, 1.0f}, Shader.TileMode.CLAMP));
+            canvas.drawRect(f, (getHeight() + r3) - min, scrollX + getWidth(), r3 + getHeight(), this.fadePaint);
+            canvas.restoreToCount(saveLayer);
+        }
+    }
+
+    private GradientDrawable flatBordered(int i, int i2, int i3) {
+        GradientDrawable flat = flat(i, i3);
+        flat.setStroke(dp(1.0f), i2);
+        return flat;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void dismissCapsuleOverlay() {
+        Dialog dialog = this.capsuleDialog;
+        if (dialog != null) {
+            try {
+                dialog.dismiss();
+            } catch (RuntimeException unused) {
+            }
+            this.capsuleDialog = null;
+        }
+    }
+
+    /* Rebuilt by hand from bytecode (decompiler output was incomplete). */
+    private void showCapsuleNav(final FrameLayout frameLayout) {
+        boolean z = Build.VERSION.SDK_INT >= 31 && ((WindowManager) getSystemService(WindowManager.class)).isCrossWindowBlurEnabled();
+        Log.i("HPP1005", z ? "capsule mode: blur-dialog (flat tint + background blur)" : "capsule mode: overlay-dialog (opaque flat tint, blur unavailable)");
+        LinearLayout buildCapsuleNav = buildCapsuleNav(true);
+        buildCapsuleNav.setImportantForAccessibility(2);
+        Dialog dialog = this.capsuleDialog;
+        if (dialog != null && dialog.isShowing()) {
+            try {
+                this.capsuleDialog.setContentView(buildCapsuleNav);
+                Window window2 = this.capsuleDialog.getWindow();
+                if (window2 != null) {
+                    window2.setBackgroundDrawable(capsuleWindowBackground(z));
+                }
+                LinearLayout buildCapsuleNav2 = buildCapsuleNav(false);
+                buildCapsuleNav2.setAlpha(0.01f);
+                addCapsuleInline(frameLayout, buildCapsuleNav2);
+                return;
+            } catch (RuntimeException unused) {
+                dismissCapsuleOverlay();
+            }
+        }
+        dismissCapsuleOverlay();
+        LinearLayout buildCapsuleNav3 = buildCapsuleNav(false);
+        buildCapsuleNav3.setAlpha(0.01f);
+        addCapsuleInline(frameLayout, buildCapsuleNav3);
+        final Dialog dialog2 = new Dialog(this);
+        dialog2.setContentView(buildCapsuleNav);
+        dialog2.setCancelable(false);
+        Window window = dialog2.getWindow();
+        if (window == null) {
+            addCapsuleInline(frameLayout, buildCapsuleNav);
+            return;
+        }
+        window.setBackgroundDrawable(capsuleWindowBackground(z));
+        if (z && Build.VERSION.SDK_INT >= 31) {
+            window.setBackgroundBlurRadius(dp(28.0f));
+        }
+        WindowManager.LayoutParams attributes = window.getAttributes();
+        attributes.gravity = 81;
+        attributes.y = dp(16.0f);
+        attributes.width = -2;
+        attributes.height = -2;
+        attributes.flags |= 40;
+        attributes.flags &= -3;
+        window.setAttributes(attributes);
+        this.capsuleDialog = dialog2;
+        frameLayout.post(new Runnable() {
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$showCapsuleNav$7(dialog2, frameLayout);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showCapsuleNav$7(Dialog dialog, FrameLayout frameLayout) {
+        if (this.capsuleDialog != dialog || isFinishing() || isDestroyed()) {
+            return;
+        }
+        try {
+            dialog.show();
+        } catch (RuntimeException e) {
+            Log.w("HPP1005", "capsule blur dialog failed; inline fallback", e);
+            if (this.capsuleDialog == dialog) {
+                this.capsuleDialog = null;
+            }
+            addCapsuleInline(frameLayout, buildCapsuleNav(false));
+        }
+    }
+
+    private GradientDrawable capsuleWindowBackground(boolean z) {
+        boolean z2 = this.darkMode;
+        return flatBordered(z2 ? z ? -651877083 : -14342875 : z ? -637534209 : -1, z2 ? 452984831 : 436207616, 38);
+    }
+
+    private void addCapsuleInline(FrameLayout frameLayout, LinearLayout linearLayout) {
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(-2, -2, 81);
+        layoutParams.setMargins(0, 0, 0, dp(16.0f));
+        frameLayout.addView(linearLayout, layoutParams);
+    }
+
+    private LinearLayout buildCapsuleNav(boolean z) {
+        LinearLayout horizontal = horizontal();
+        horizontal.setGravity(17);
+        horizontal.setPadding(dp(8.0f), dp(8.0f), dp(8.0f), dp(8.0f));
+        if (z) {
+            horizontal.setBackground(null);
+        } else {
+            horizontal.setBackground(flat(this.darkMode ? -14342875 : -1, 38));
+            horizontal.setClipToOutline(true);
+            horizontal.setElevation(dp(14.0f));
+        }
+        String selectedBottomTab = selectedBottomTab();
+        horizontal.addView(navItem(R.drawable.ic_nav_home, getString(R.string.text_035), "home", "home".equals(selectedBottomTab)));
+        horizontal.addView(navItem(R.drawable.ic_nav_printer, getString(R.string.text_036), "print", "print".equals(selectedBottomTab)));
+        horizontal.addView(navItem(R.drawable.ic_nav_queue, getString(R.string.text_037), "queue", "queue".equals(selectedBottomTab)));
+        return horizontal;
     }
 
     private String selectedBottomTab() {
-        if ("home".equals(currentPage) || "setup".equals(currentPage)) return "home";
-        if ("print".equals(currentPage) || "preview".equals(currentPage)) return "print";
-        if ("queue".equals(currentPage)) return "queue";
-        return "home";
+        return ("home".equals(this.currentPage) || "setup".equals(this.currentPage)) ? "home" : ("print".equals(this.currentPage) || "preview".equals(this.currentPage)) ? "print" : "queue".equals(this.currentPage) ? "queue" : "home";
     }
 
-    private LinearLayout navItem(int iconRes, String title, String page, boolean active) {
-        LinearLayout item = vertical();
-        item.setGravity(Gravity.CENTER);
-        // Reviewed proposal: equal-width tab slots so the selection oval never
-        // depends on label width; the long queue label ellipsizes inside its slot.
-        item.setPadding(dp(0), dp(9), dp(0), dp(8));
-        if (active) item.setBackground(flat(darkMode ? 0xFF6E6E73 : 0xFFE9E9EE, 24));
-        int ink = active ? (darkMode ? Color.WHITE : 0xFF1B1B1B) : textSecondary();
-        ImageView icon = new ImageView(this);
-        icon.setImageResource(iconRes);
-        icon.setColorFilter(ink, PorterDuff.Mode.SRC_IN);
-        item.addView(icon, new LinearLayout.LayoutParams(dp(22), dp(22)));
-        TextView navLabel = label(title, 10.5f, ink, true);
-        navLabel.setMaxLines(1);
-        // Complete labels only: no truncation. Slot width/label size are verified on
-        // phone and tablet pixels; adjust slot geometry, never cut the words.
-        LinearLayout.LayoutParams navLabelParams = new LinearLayout.LayoutParams(-2, -2);
-        navLabelParams.topMargin = dp(3);
-        item.addView(navLabel, navLabelParams);
-        LinearLayout.LayoutParams itemParams = new LinearLayout.LayoutParams(dp(96), -2);
-        item.setLayoutParams(itemParams);
-        item.setContentDescription(title);
-        item.setClickable(true);
-        item.setFocusable(true);
-        item.setHapticFeedbackEnabled(hapticsEnabled);
-        item.setOnClickListener(v -> { performTapFeedback(v); openPage(page); });
-        return item;
-    }
-
-    private void buildPage(LinearLayout content) {
-        output = null;
-        switch (currentPage) {
-            case "preview": buildPreviewPage(content); break;
-            case "print": buildPrintPage(content); break;
-            case "queue": buildQueuePage(content); break;
-            case "setup": buildSetupPage(content); break;
-            case "activity": buildActivityPage(content); break;
-            case "settings": buildSettingsPage(content); break;
-            case "about": buildAboutPage(content); break;
-            case "help": buildHelpPage(content); break;
-            default: buildHomePage(content); break;
+    private LinearLayout navItem(int i, String str, final String str2, boolean z) {
+        int textSecondary;
+        LinearLayout vertical = vertical();
+        vertical.setGravity(17);
+        vertical.setPadding(dp(0.0f), dp(9.0f), dp(0.0f), dp(8.0f));
+        if (z) {
+            final GradientDrawable flat = flat(this.darkMode ? -12698046 : -1447442, 24);
+            vertical.setBackground(flat);
+            if (!reducedMotion()) {
+                flat.setAlpha(0);
+                ValueAnimator ofInt = ValueAnimator.ofInt(0, 255);
+                ofInt.setDuration(90L);
+                ofInt.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda76
+                    @Override // android.animation.ValueAnimator.AnimatorUpdateListener
+                    public final void onAnimationUpdate(ValueAnimator valueAnimator) {
+                        flat.setAlpha(((Integer) valueAnimator.getAnimatedValue()).intValue());
+                    }
+                });
+                ofInt.start();
+            }
         }
-    }
-
-    private void pageHeader(LinearLayout parent, String eyebrow, String title, String subtitle,
-                            boolean withSettings) {
-        LinearLayout header = horizontal();
-        header.setGravity(Gravity.TOP);
-        LinearLayout texts = vertical();
-        if (eyebrow != null) {
-            texts.addView(label(eyebrow, 11, eyebrowColor(), true), margin(0, 4, 0, 6));
-        }
-        TextView heading = label(title, 29, textPrimary(), true);
-        heading.setLineSpacing(0, 1.02f);
-        texts.addView(heading, margin(0, 0, 0, 5));
-        if (subtitle != null) {
-            TextView description = label(subtitle, 13, textSecondary(), false);
-            description.setLineSpacing(dp(3), 1.1f);
-            texts.addView(description);
-        }
-        header.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
-        if (withSettings) {
-            LinearLayout gear = new LinearLayout(this);
-            gear.setGravity(Gravity.CENTER);
-            gear.setBackground(flat(cardColor(), 18));
-            gear.setContentDescription("الإعدادات");
-            // Flat like the reviewed design.
-            ImageView icon = new ImageView(this);
-            icon.setImageResource(R.drawable.ic_settings);
-            icon.setColorFilter(textPrimary(), PorterDuff.Mode.SRC_IN);
-            gear.addView(icon, new LinearLayout.LayoutParams(dp(19), dp(19)));
-            gear.setClickable(true);
-            gear.setFocusable(true);
-            gear.setHapticFeedbackEnabled(hapticsEnabled);
-            gear.setOnClickListener(v -> { performTapFeedback(v); openPage("settings"); });
-            LinearLayout.LayoutParams gearParams = new LinearLayout.LayoutParams(dp(36), dp(36));
-            gearParams.setMargins(dp(10), dp(6), 0, 0);
-            header.addView(gear, gearParams);
-        }
-        parent.addView(header, margin(0, 0, 0, 16));
-    }
-
-    private void openPage(String page) {
-        currentPage = page;
-        renderApp();
-    }
-
-    private void navigateBack() {
-        switch (currentPage) {
-            case "preview": openPage("print"); break;
-            case "about":
-            case "help":
-            case "activity": openPage("settings"); break;
-            case "settings":
-            case "setup": openPage("home"); break;
-            case "print":
-            case "queue": openPage("home"); break;
-            default: break;
-        }
-    }
-
-    @Override public void onBackPressed() {
-        if (!"home".equals(currentPage)) {
-            navigateBack();
+        if (z) {
+            textSecondary = this.darkMode ? -1 : -15000805;
         } else {
-            super.onBackPressed();
+            textSecondary = textSecondary();
         }
+        ImageView imageView = new ImageView(this);
+        imageView.setImageResource(i);
+        imageView.setColorFilter(textSecondary, PorterDuff.Mode.SRC_IN);
+        vertical.addView(imageView, new LinearLayout.LayoutParams(dp(22.0f), dp(22.0f)));
+        TextView label = label(str, 12.0f, textSecondary, true);
+        label.setMaxLines(1);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-2, -2);
+        layoutParams.topMargin = dp(3.0f);
+        vertical.addView(label, layoutParams);
+        vertical.setLayoutParams(new LinearLayout.LayoutParams(dp(100.0f), -2));
+        vertical.setContentDescription(str);
+        vertical.setClickable(true);
+        vertical.setFocusable(true);
+        vertical.setHapticFeedbackEnabled(this.hapticsEnabled);
+        vertical.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda77
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$navItem$9(str2, view);
+            }
+        });
+        return vertical;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$navItem$9(String str, View view) {
+        performTapFeedback(view);
+        openPage(str);
+    }
+
+    private void buildPage(LinearLayout linearLayout) {
+        this.output = null;
+        String str = this.currentPage;
+        str.hashCode();
+        switch (str) {
+            case "sourcemap":
+                buildSourceMapPage(linearLayout);
+                break;
+            case "activity":
+                buildActivityPage(linearLayout);
+                break;
+            case "layout":
+                buildLayoutPage(linearLayout);
+                break;
+            case "preview":
+                buildPreviewPage(linearLayout);
+                break;
+            case "help":
+                buildHelpPage(linearLayout);
+                break;
+            case "about":
+                buildAboutPage(linearLayout);
+                break;
+            case "print":
+                buildPrintPage(linearLayout);
+                break;
+            case "queue":
+                buildQueuePage(linearLayout);
+                break;
+            case "setup":
+                buildSetupPage(linearLayout);
+                break;
+            case "settings":
+                buildSettingsPage(linearLayout);
+                break;
+            default:
+                buildHomePage(linearLayout);
+                break;
+        }
+    }
+
+    private void pageHeader(LinearLayout linearLayout, String str, String str2, String str3, boolean z) {
+        LinearLayout horizontal = horizontal();
+        horizontal.setGravity(48);
+        LinearLayout vertical = vertical();
+        if (str != null) {
+            vertical.addView(label(str, 11.0f, eyebrowColor(), true), margin(0, 4, 0, 6));
+        }
+        TextView label = label(str2, 20.0f, textPrimary(), true);
+        label.setLineSpacing(0.0f, 1.02f);
+        vertical.addView(label, margin(0, 0, 0, 5));
+        if (str3 != null) {
+            TextView label2 = label(str3, 13.0f, textSecondary(), false);
+            label2.setLineSpacing(dp(3.0f), 1.1f);
+            vertical.addView(label2);
+        }
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        if (z) {
+            final LinearLayout linearLayout2 = new LinearLayout(this);
+            linearLayout2.setGravity(17);
+            linearLayout2.setBackground(flat(cardColor(), 18));
+            linearLayout2.setContentDescription(getString(R.string.text_038));
+            ImageView imageView = new ImageView(this);
+            imageView.setImageResource(R.drawable.ic_more_vert);
+            imageView.setColorFilter(textPrimary(), PorterDuff.Mode.SRC_IN);
+            linearLayout2.addView(imageView, new LinearLayout.LayoutParams(dp(19.0f), dp(19.0f)));
+            linearLayout2.setClickable(true);
+            linearLayout2.setFocusable(true);
+            linearLayout2.setHapticFeedbackEnabled(this.hapticsEnabled);
+            linearLayout2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda39
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$pageHeader$10(linearLayout2, view);
+                }
+            });
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(dp(36.0f), dp(36.0f));
+            layoutParams.setMargins(dp(10.0f), dp(6.0f), 0, 0);
+            horizontal.addView(linearLayout2, layoutParams);
+        }
+        linearLayout.addView(horizontal, margin(0, 0, 0, 16));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$pageHeader$10(LinearLayout linearLayout, View view) {
+        performTapFeedback(view);
+        showMainMenu(linearLayout);
+    }
+
+    private void showMainMenu(View view) {
+        boolean z = this.darkMode;
+        int i = z ? -14342875 : -1;
+        int i2 = z ? 788529151 : 335544320;
+        final PopupWindow[] popupWindowArr = new PopupWindow[1];
+        LinearLayout vertical = vertical();
+        vertical.setMinimumWidth(dp(208.0f));
+        vertical.setPadding(dp(6.0f), dp(6.0f), dp(6.0f), dp(6.0f));
+        String[] strArr = {getString(R.string.text_039), getString(R.string.text_040)};
+        for (int i3 = 0; i3 < 2; i3++) {
+            final String str = strArr[i3];
+            TextView label = label(str, 16.0f, textPrimary(), false);
+            label.setGravity(8388627);
+            label.setMinHeight(dp(50.0f));
+            label.setPadding(dp(20.0f), 0, dp(20.0f), 0);
+            label.setBackground(new RippleDrawable(ColorStateList.valueOf(i2), null, flat(this.darkMode ? -1 : ViewCompat.MEASURED_STATE_MASK, 20)));
+            label.setClickable(true);
+            label.setFocusable(true);
+            label.setHapticFeedbackEnabled(this.hapticsEnabled);
+            label.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda133
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view2) {
+                    MainActivity.this.lambda$showMainMenu$11(popupWindowArr, str, view2);
+                }
+            });
+            vertical.addView(label, margin(0, 0, 0, 0));
+        }
+        vertical.setOutlineProvider(new ViewOutlineProvider() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.5
+            @Override // android.view.ViewOutlineProvider
+            public void getOutline(View view2, Outline outline) {
+                outline.setRoundRect(0, 0, view2.getWidth(), view2.getHeight(), MainActivity.this.dp(26.0f));
+            }
+        });
+        vertical.setClipToOutline(true);
+        PopupWindow popupWindow = new PopupWindow((View) vertical, -2, -2, true);
+        popupWindowArr[0] = popupWindow;
+        popupWindow.setBackgroundDrawable(flat(i, 26));
+        popupWindow.setElevation(dp(12.0f));
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.showAsDropDown(view, 0, dp(4.0f), 8388661);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showMainMenu$11(PopupWindow[] popupWindowArr, String str, View view) {
+        performTapFeedback(view);
+        popupWindowArr[0].dismiss();
+        openPage(getString(R.string.text_039).contentEquals(str) ? "settings" : "about");
     }
 
     private void performTapFeedback(View view) {
-        if (hapticsEnabled) view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+        if (this.hapticsEnabled) {
+            view.performHapticFeedback(1);
+        }
     }
 
     private String readAppVersion() {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
-        } catch (Exception ignored) {
-            return "الإصدار غير متاح";
+        } catch (Exception unused) {
+            return getString(R.string.text_041);
         }
     }
 
-    private void buildHomePage(LinearLayout content) {
-        pageHeader(content, null, "الرئيسية", null, true);
-
-        boolean connected = hasPrinterConnected();
-        LinearLayout hero = card();
-        LinearLayout heroRow = horizontal();
-        heroRow.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout htext = vertical();
-        htext.addView(label("HP LaserJet P1005", 16.5f, textPrimary(), true));
-        htext.addView(label("طابعة ليزر أحادية اللون · USB OTG", 12, textSecondary(), false),
-                margin(0, 3, 0, 0));
-        LinearLayout pillWrap = vertical();
-        pillWrap.addView(statusPill(connected), new LinearLayout.LayoutParams(-2, -2));
-        htext.addView(pillWrap, margin(0, 9, 0, 0));
-        heroRow.addView(htext, new LinearLayout.LayoutParams(0, -2, 1f));
-        ImageView photo = new ImageView(this);
-        photo.setImageResource(R.drawable.p1005_photo);
-        photo.setAdjustViewBounds(true);
-        photo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        photo.setContentDescription("طابعة HP LaserJet P1005");
-        LinearLayout.LayoutParams photoParams = new LinearLayout.LayoutParams(dp(118), dp(104));
-        photoParams.setMargins(0, 0, dp(14), 0);
-        heroRow.addView(photo, photoParams);
-        hero.addView(heroRow, margin(0, 0, 0, 14));
-        LinearLayout actions = horizontal();
-        Button printDoc = new Button(this);
-        printDoc.setText("طباعة مستند");
-        printDoc.setAllCaps(false);
-        printDoc.setTextSize(14.5f);
-        printDoc.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
-        printDoc.setTextColor(Color.WHITE);
-        printDoc.setBackground(verticalGradient(primaryColor(), primaryDeep(), 24));
-        printDoc.setMinHeight(dp(48));
-        if (Build.VERSION.SDK_INT >= 21) printDoc.setStateListAnimator(null);
-        printDoc.setHapticFeedbackEnabled(hapticsEnabled);
-        printDoc.setOnClickListener(v -> { performTapFeedback(v); openDocumentPicker(false); });
-        actions.addView(printDoc, new LinearLayout.LayoutParams(0, dp(48), 1f));
-        Button printPhoto = tonalButton("طباعة الصور", 14.5f);
-        printPhoto.setOnClickListener(v -> { performTapFeedback(v); openDocumentPicker(true); });
-        LinearLayout.LayoutParams photoBtnParams = new LinearLayout.LayoutParams(0, dp(48), 1f);
-        photoBtnParams.setMarginStart(dp(10));
-        actions.addView(printPhoto, photoBtnParams);
-        hero.addView(actions, margin(0, 0, 0, 0));
-        LinearLayout recent = card();
-        LinearLayout recentHeader = horizontal();
-        recentHeader.addView(label("النشاط الأخير", 15.5f, textPrimary(), true),
-                new LinearLayout.LayoutParams(0, -2, 1f));
-        TextView viewAll = label("عرض الكل", 12, tonalText(), true);
-        viewAll.setPadding(dp(8), dp(6), 0, dp(6));
-        viewAll.setOnClickListener(v -> { performTapFeedback(v); openPage("queue"); });
-        recentHeader.addView(viewAll);
-        recent.addView(recentHeader, margin(0, 0, 0, 10));
-        ArrayList<String> lines = recentLogLines(3);
-        if (lines.isEmpty()) {
-            recent.addView(label("لا يوجد نشاط بعد. صِل الطابعة وافحص أجهزة USB.",
-                    11.5f, textSecondary(), false));
-        } else {
-            for (String line : lines) {
-                TextView logLine = label("•  " + line, 11.5f, textSecondary(), false);
-                logLine.setLineSpacing(dp(4), 1f);
-                recent.addView(logLine, margin(0, 0, 0, 5));
+    private void buildHomePage(LinearLayout linearLayout) {
+        pageHeader(linearLayout, null, getString(R.string.text_035), null, true);
+        boolean hasPrinterConnected = hasPrinterConnected();
+        LinearLayout card = card();
+        LinearLayout horizontal = horizontal();
+        horizontal.setGravity(16);
+        LinearLayout vertical = vertical();
+        vertical.addView(label("HP LaserJet P1005", 16.5f, textPrimary(), true));
+        vertical.addView(label(getString(R.string.text_042), 13.0f, textSecondary(), false), margin(0, 3, 0, 0));
+        LinearLayout vertical2 = vertical();
+        vertical2.addView(statusPill(hasPrinterConnected), new LinearLayout.LayoutParams(-2, -2));
+        vertical.addView(vertical2, margin(0, 9, 0, 0));
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        ImageView imageView = new ImageView(this);
+        imageView.setImageResource(R.drawable.p1005_photo);
+        imageView.setAdjustViewBounds(true);
+        imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        imageView.setContentDescription(getString(R.string.text_043));
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(dp(118.0f), dp(104.0f));
+        layoutParams.setMargins(0, 0, dp(14.0f), 0);
+        horizontal.addView(imageView, layoutParams);
+        card.addView(horizontal, margin(0, 0, 0, 0));
+        LinearLayout horizontal2 = horizontal();
+        Button button = new Button(this);
+        button.setText(getString(R.string.text_044));
+        button.setAllCaps(false);
+        button.setTextSize(16.0f);
+        button.setTypeface(Typeface.create("sans-serif-medium", 1));
+        button.setTextColor(-1);
+        button.setBackground(flat(primaryColor(), 24));
+        button.setMinHeight(dp(48.0f));
+        button.setStateListAnimator(null);
+        button.setHapticFeedbackEnabled(this.hapticsEnabled);
+        button.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda15
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildHomePage$12(view);
             }
-        }
-        LinearLayout setup = new LinearLayout(this);
-        setup.setGravity(Gravity.CENTER);
-        setup.setOrientation(LinearLayout.HORIZONTAL);
-        setup.setBackground(flat(tonalBg(), 27));
-        setup.setHapticFeedbackEnabled(hapticsEnabled);
-        ImageView setupIcon = new ImageView(this);
-        setupIcon.setImageResource(R.drawable.ic_nav_printer);
-        setupIcon.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
-        setup.addView(setupIcon, new LinearLayout.LayoutParams(dp(20), dp(20)));
-        TextView setupTitle = label("إعداد الطابعة", 16, tonalText(), true);
-        LinearLayout.LayoutParams setupTitleParams = new LinearLayout.LayoutParams(-2, -2);
-        setupTitleParams.setMarginStart(dp(9));
-        setup.addView(setupTitle, setupTitleParams);
-        setup.setClickable(true);
-        setup.setFocusable(true);
-        setup.setOnClickListener(v -> { performTapFeedback(v); openPage("setup"); });
-        LinearLayout homeSide = vertical();
-        homeSide.addView(recent, margin(0, 0, 0, 14));
-        homeSide.addView(setup, new LinearLayout.LayoutParams(-1, dp(56)));
-        addPair(content, hero, homeSide);
-    }
-
-    private ArrayList<String> recentLogLines(int max) {
-        String[] lines = activityLog.toString().trim().split("\\n");
-        ArrayList<String> result = new ArrayList<>();
-        for (int i = lines.length - 1; i >= 0 && result.size() < max; i--) {
-            String line = lines[i].trim();
-            if (line.isEmpty() || line.contains("سجل نشاط HP P1005")
-                    || line.contains("HP P1005 activity log")) continue;
-            result.add(0, line);
-        }
-        return result;
-    }
-
-    private void buildPrintPage(LinearLayout content) {
-        pageHeader(content, null, "طباعة", "اختر ملفًا للمعاينة والطباعة.", false);
-
-        LinearLayout docs = card();
-        LinearLayout docsHeader = horizontal();
-        LinearLayout docWell = new LinearLayout(this);
-        docWell.setGravity(Gravity.CENTER);
-        docWell.setBackground(flat(iconWell(), 15));
-        ImageView docIcon = new ImageView(this);
-        docIcon.setImageResource(R.drawable.ic_doc);
-        docIcon.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
-        docWell.addView(docIcon, new LinearLayout.LayoutParams(dp(24), dp(24)));
-        docsHeader.addView(docWell, new LinearLayout.LayoutParams(dp(46), dp(46)));
-        LinearLayout docsText = vertical();
-        docsText.setPaddingRelative(dp(12), 0, 0, 0);
-        docsText.addView(label("المستندات والصور", 16, textPrimary(), true), margin(0, 0, 0, 4));
-        docsText.addView(label(selectedDocumentUri == null ? "PDF وصور وملفات Office ونصوص"
-                : selectedDocumentName, 11.5f, textSecondary(), false));
-        docsHeader.addView(docsText, new LinearLayout.LayoutParams(0, -2, 1f));
-        docs.addView(docsHeader, margin(0, 0, 0, 13));
-        TextView docsNote = label(selectedDocumentUri == null
-                ? "تصفّح الجهاز أو خدمة سحابية. تحتفظ ملفات PDF والصور بتنسيقها؛ تُستورَد ملفات Office كتخطيط نصي."
-                : documentRenderer != null && documentRenderer.isSupported()
-                    ? documentRenderer.getPageCount() + " صفحة · " + documentRenderer.getFormatLabel()
-                    : "هذا النوع يحتاج إلى فتحه أو تصديره كملف PDF من تطبيق متوافق قبل الطباعة المباشرة.",
-                12, textSecondary(), false);
-        docsNote.setLineSpacing(dp(3), 1f);
-        docs.addView(docsNote, margin(0, 0, 0, 13));
-        LinearLayout docButtons = horizontal();
-        Button browse = bigPrimaryButton(selectedDocumentUri == null ? "اختيار ملف" : "اختيار ملف آخر");
-        browse.setTextSize(14.5f);
-        browse.setMinHeight(dp(48));
-        browse.setOnClickListener(v -> { performTapFeedback(v); openDocumentPicker(false); });
-        docButtons.addView(browse, new LinearLayout.LayoutParams(0, dp(48), 1f));
-        Button preview = tonalButton("المعاينة والطباعة", 13.5f);
-        preview.setMinHeight(dp(48));
-        preview.setEnabled(selectedDocumentUri != null);
-        preview.setAlpha(selectedDocumentUri != null ? 1f : 0.5f);
-        preview.setOnClickListener(v -> {
-            if (selectedDocumentUri == null) openDocumentPicker(false);
-            else openPage("preview");
         });
-        LinearLayout.LayoutParams previewParams = new LinearLayout.LayoutParams(0, dp(48), 1f);
-        previewParams.setMarginStart(dp(9));
-        docButtons.addView(preview, previewParams);
-        docs.addView(docButtons);
-
-        LinearLayout test = card();
-        LinearLayout testHeader = horizontal();
-        LinearLayout testWell = new LinearLayout(this);
-        testWell.setGravity(Gravity.CENTER);
-        testWell.setBackground(flat(iconWell(), 15));
-        ImageView testIcon = new ImageView(this);
-        testIcon.setImageResource(R.drawable.ic_nav_printer);
-        testIcon.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
-        testWell.addView(testIcon, new LinearLayout.LayoutParams(dp(24), dp(24)));
-        testHeader.addView(testWell, new LinearLayout.LayoutParams(dp(46), dp(46)));
-        LinearLayout testText = vertical();
-        testText.setPaddingRelative(dp(12), 0, 0, 0);
-        testText.addView(label("صفحة تجريبية مدمجة", 16, textPrimary(), true), margin(0, 0, 0, 4));
-        testText.addView(label("مهمة XQX أحادية اللون من صفحة واحدة", 11.5f, textSecondary(), false));
-        testHeader.addView(testText, new LinearLayout.LayoutParams(0, -2, 1f));
-        test.addView(testHeader, margin(0, 0, 0, 13));
-        TextView testNote = label("يُرسل التطبيق تدفق الاختبار عبر USB مباشرة؛ يؤكد ذلك مسار النقل، وتحقق من خروج الصفحة فعليًا من الطابعة.",
-                12, textSecondary(), false);
-        testNote.setLineSpacing(dp(3), 1f);
-        test.addView(testNote, margin(0, 0, 0, 14));
-        Button printTest = tonalButton("طباعة الصفحة التجريبية", 14.5f);
-        printTest.setMinHeight(dp(48));
-        printTest.setOnClickListener(v -> { performTapFeedback(v); printBuiltInTestPage(); });
-        test.addView(printTest, new LinearLayout.LayoutParams(-1, dp(48)));
-        addPair(content, docs, test);
-
-        Button maintenance = tonalButton("صيانة الطابعة", 14.5f);
-        maintenance.setMinHeight(dp(52));
-        maintenance.setOnClickListener(v -> { performTapFeedback(v); openPage("settings"); });
-        content.addView(maintenance, new LinearLayout.LayoutParams(-1, dp(52)));
-    }
-
-    private void addToolRow(LinearLayout parent, String title, String subtitle,
-                            String action, Runnable callback) {
-        LinearLayout row = horizontal();
-        row.setPadding(0, dp(12), 0, dp(12));
-        LinearLayout labels = vertical();
-        labels.addView(label(title, 13.5f, textPrimary(), true), margin(0, 0, 0, 4));
-        TextView detail = label(subtitle, 11, textSecondary(), false);
-        detail.setMaxLines(3);
-        labels.addView(detail);
-        row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1f));
-        Button button = tonalButton(action, 11);
-        button.setMinHeight(dp(38));
-        button.setPadding(dp(8), 0, dp(8), 0);
-        LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(dp(76), dp(38));
-        buttonParams.setMarginStart(dp(10));
-        row.addView(button, buttonParams);
-        button.setOnClickListener(v -> { performTapFeedback(v); callback.run(); });
-        parent.addView(row, new LinearLayout.LayoutParams(-1, -2));
-    }
-
-    private void addSeparator(LinearLayout parent) {
-        View line = new View(this);
-        line.setBackgroundColor(dividerColor());
-        parent.addView(line, new LinearLayout.LayoutParams(-1, dp(1)));
-    }
-
-    private void buildQueuePage(LinearLayout content) {
-        pageHeader(content, "HP LaserJet P1005", "قائمة الطباعة",
-                "المهام الجارية والمنتظرة، وسجل ما أُرسل للطابعة.", false);
-
-        LinearLayout queueMain = vertical();
-        LinearLayout queueSide = vertical();
-        queueMain.addView(sectionLabel("جارية الآن"), margin(2, 0, 0, 8));
-        if (printInProgress && currentJobName != null) {
-            LinearLayout job = card();
-            LinearLayout jobHeader = horizontal();
-            LinearLayout jobWell = new LinearLayout(this);
-            jobWell.setGravity(Gravity.CENTER);
-            jobWell.setBackground(flat(iconWell(), 13));
-            ImageView jobIcon = new ImageView(this);
-            jobIcon.setImageResource(R.drawable.ic_doc);
-            jobIcon.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
-            jobWell.addView(jobIcon, new LinearLayout.LayoutParams(dp(20), dp(20)));
-            jobHeader.addView(jobWell, new LinearLayout.LayoutParams(dp(40), dp(40)));
-            LinearLayout jobText = vertical();
-            jobText.setPaddingRelative(dp(11), 0, 0, 0);
-            TextView jobName = label(currentJobName, 14, textPrimary(), true);
-            // Same RTL correctness as the preview header: align to the view's logical
-            // start so LTR filenames sit flush with the icon side and still read LTR.
-            jobName.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-            jobName.setMaxLines(1);
-            jobName.setEllipsize(TextUtils.TruncateAt.END);
-            jobText.addView(jobName, margin(0, 0, 0, 3));
-            jobText.addView(label("تُرسل للطابعة · صفحة " + Math.min(currentJobDone + 1, Math.max(currentJobTotal, 1))
-                    + " من " + Math.max(currentJobTotal, 1), 11.5f, textSecondary(), false));
-            jobHeader.addView(jobText, new LinearLayout.LayoutParams(0, -2, 1f));
-            job.addView(jobHeader, margin(0, 0, 0, 4));
-            ProgressBar bar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-            bar.setMax(Math.max(currentJobTotal, 1));
-            bar.setProgress(Math.min(currentJobDone, Math.max(currentJobTotal, 1)));
-            bar.setProgressTintList(ColorStateList.valueOf(primaryColor()));
-            bar.setProgressBackgroundTintList(ColorStateList.valueOf(trackColor()));
-            bar.setProgressBackgroundTintMode(PorterDuff.Mode.SRC_IN);
-            job.addView(bar, new LinearLayout.LayoutParams(-1, dp(8)));
-            Button cancel = tonalButton("إلغاء المهمة", 13.5f);
-            cancel.setMinHeight(dp(44));
-            cancel.setOnClickListener(v -> {
-                performTapFeedback(v);
-                jobCancelRequested = true;
-                systemToast("سيُلغى الإرسال بعد اكتمال الصفحة الجارية.", Toast.LENGTH_LONG).show();
-            });
-            job.addView(cancel, margin(0, 11, 0, 0));
-            queueMain.addView(job, margin(0, 0, 0, 16));
+        horizontal2.addView(button, new LinearLayout.LayoutParams(0, dp(48.0f), 1.0f));
+        Button button2 = tonalButton(getString(R.string.text_045), 16.0f);
+        button2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda26
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildHomePage$13(view);
+            }
+        });
+        LinearLayout.LayoutParams layoutParams2 = new LinearLayout.LayoutParams(0, dp(48.0f), 1.0f);
+        layoutParams2.setMarginStart(dp(10.0f));
+        horizontal2.addView(button2, layoutParams2);
+        LinearLayout horizontal3 = horizontal();
+        horizontal3.addView(label(getString(R.string.text_046), 16.0f, textPrimary(), true), new LinearLayout.LayoutParams(0, -2, 1.0f));
+        TextView label = label(getString(R.string.text_047), 13.0f, tonalText(), true);
+        label.setPadding(dp(8.0f), dp(6.0f), 0, dp(6.0f));
+        label.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda37
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildHomePage$14(view);
+            }
+        });
+        horizontal3.addView(label);
+        LinearLayout card2 = card();
+        ArrayList<String> recentLogLines = recentLogLines(3);
+        if (recentLogLines.isEmpty()) {
+            card2.addView(label(getString(R.string.text_048), 13.0f, textSecondary(), false));
         } else {
-            LinearLayout empty = card();
-            empty.setGravity(Gravity.CENTER_HORIZONTAL);
-            empty.addView(label("لا توجد مهمة جارية الآن", 13.5f, textSecondary(), false),
-                    margin(0, 6, 0, 6));
-            queueMain.addView(empty, margin(0, 0, 0, 16));
-        }
-
-        queueMain.addView(sectionLabel("في الانتظار"), margin(2, 0, 0, 8));
-        if (selectedDocumentUri != null) {
-            LinearLayout waiting = card();
-            waiting.setPadding(dp(14), dp(12), dp(14), dp(12));
-            LinearLayout row = horizontal();
-            LinearLayout waitWell = new LinearLayout(this);
-            waitWell.setGravity(Gravity.CENTER);
-            waitWell.setBackground(flat(iconWell(), 13));
-            ImageView waitIcon = new ImageView(this);
-            waitIcon.setImageResource(documentRenderer != null && documentRenderer.isImage()
-                    ? R.drawable.ic_image : R.drawable.ic_doc);
-            waitIcon.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
-            waitWell.addView(waitIcon, new LinearLayout.LayoutParams(dp(20), dp(20)));
-            row.addView(waitWell, new LinearLayout.LayoutParams(dp(40), dp(40)));
-            LinearLayout waitText = vertical();
-            waitText.setPaddingRelative(dp(11), 0, 0, 0);
-            TextView waitName = label(selectedDocumentName, 13.5f, textPrimary(), true);
-            // Same RTL correctness as the preview header: align to the view's logical
-            // start so LTR filenames sit flush with the icon side and still read LTR.
-            waitName.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-            waitName.setMaxLines(1);
-            waitName.setEllipsize(TextUtils.TruncateAt.END);
-            waitText.addView(waitName, margin(0, 0, 0, 3));
-            waitText.addView(label(printInProgress ? "بانتظار انتهاء المهمة الحالية" : "بانتظار المعاينة والطباعة",
-                    11.5f, textSecondary(), false));
-            row.addView(waitText, new LinearLayout.LayoutParams(0, -2, 1f));
-            waiting.addView(row);
-            queueMain.addView(waiting, margin(0, 0, 0, 16));
-        } else {
-            LinearLayout empty = card();
-            empty.setGravity(Gravity.CENTER_HORIZONTAL);
-            empty.addView(label("لا توجد مهام منتظرة", 13.5f, textSecondary(), false),
-                    margin(0, 6, 0, 6));
-            queueMain.addView(empty, margin(0, 0, 0, 16));
-        }
-
-        queueSide.addView(sectionLabel("سجل الطباعة"), margin(2, 0, 0, 8));
-        LinearLayout history = card();
-        history.setPadding(dp(14), dp(6), dp(14), dp(6));
-        ArrayList<String> lines = recentLogLines(8);
-        if (lines.isEmpty()) {
-            history.addView(label("لا يوجد سجل بعد", 12.5f, textSecondary(), false),
-                    margin(0, 10, 0, 10));
-        } else {
-            for (int i = lines.size() - 1; i >= 0; i--) {
-                TextView entry = label(lines.get(i), 12, textPrimary(), false);
-                entry.setLineSpacing(dp(3), 1f);
-                history.addView(entry, margin(2, 9, 2, 9));
-                if (i > 0) addSeparator(history);
+            Iterator<String> it = recentLogLines.iterator();
+            while (it.hasNext()) {
+                TextView label2 = label("•  " + it.next(), 13.0f, textSecondary(), false);
+                label2.setLineSpacing((float) dp(4.0f), 1.0f);
+                card2.addView(label2, margin(0, 0, 0, 5));
             }
         }
-        queueSide.addView(history, margin(0, 0, 0, 14));
-        addPair(content, queueMain, queueSide);
-
-        TextView honesty = label("تعني «أُرسلت للطابعة» أن USB قبل البيانات؛ تحقق دائمًا من خروج الورق فعليًا.",
-                11, textSecondary(), false);
-        honesty.setLineSpacing(dp(3), 1f);
-        content.addView(honesty, margin(3, 0, 3, 8));
+        LinearLayout linearLayout2 = new LinearLayout(this);
+        linearLayout2.setGravity(17);
+        linearLayout2.setOrientation(0);
+        linearLayout2.setBackground(rounded(0, 0, this.darkMode ? -12961218 : -2565922, 28));
+        linearLayout2.setHapticFeedbackEnabled(this.hapticsEnabled);
+        ImageView imageView2 = new ImageView(this);
+        imageView2.setImageResource(R.drawable.ic_nav_printer);
+        imageView2.setColorFilter(textPrimary(), PorterDuff.Mode.SRC_IN);
+        linearLayout2.addView(imageView2, new LinearLayout.LayoutParams(dp(20.0f), dp(20.0f)));
+        TextView label3 = label(getString(R.string.text_049), 16.0f, textPrimary(), true);
+        LinearLayout.LayoutParams layoutParams3 = new LinearLayout.LayoutParams(-2, -2);
+        layoutParams3.setMarginStart(dp(9.0f));
+        linearLayout2.addView(label3, layoutParams3);
+        linearLayout2.setClickable(true);
+        linearLayout2.setFocusable(true);
+        linearLayout2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda48
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildHomePage$15(view);
+            }
+        });
+        LinearLayout vertical3 = vertical();
+        vertical3.addView(card, margin(0, 0, 0, 14));
+        vertical3.addView(horizontal2, margin(0, 0, 0, 0));
+        LinearLayout vertical4 = vertical();
+        vertical4.addView(horizontal3, margin(2, 0, 0, 8));
+        vertical4.addView(card2, margin(0, 0, 0, 14));
+        vertical4.addView(linearLayout2, new LinearLayout.LayoutParams(-1, dp(56.0f)));
+        addPair(linearLayout, vertical3, vertical4);
     }
 
-    private void buildPreviewPage(LinearLayout content) {
-        pageAppBar(content, "معاينة الطباعة");
-        if (selectedDocumentUri == null) {
-            LinearLayout empty = card();
-            empty.setGravity(Gravity.CENTER_HORIZONTAL);
-            empty.setPadding(dp(22), dp(26), dp(22), dp(22));
-            LinearLayout well = new LinearLayout(this);
-            well.setGravity(Gravity.CENTER);
-            well.setBackground(flat(iconWell(), 18));
-            ImageView icon = new ImageView(this);
-            icon.setImageResource(R.drawable.ic_doc);
-            icon.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
-            well.addView(icon, new LinearLayout.LayoutParams(dp(26), dp(26)));
-            empty.addView(well, new LinearLayout.LayoutParams(dp(54), dp(54)));
-            empty.addView(label("لم يُختَر مستند", 17, textPrimary(), true), margin(0, 14, 0, 6));
-            empty.addView(label("اختر ملف PDF أو صورة أو مستند Office أو ملف نصي للمتابعة.",
-                    12, textSecondary(), false), margin(0, 0, 0, 15));
-            Button browse = bigPrimaryButton("تصفح الملفات");
-            browse.setMinHeight(dp(48));
-            browse.setOnClickListener(v -> { performTapFeedback(v); openDocumentPicker(false); });
-            empty.addView(browse, new LinearLayout.LayoutParams(-1, dp(48)));
-            content.addView(empty);
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildHomePage$12(View view) {
+        performTapFeedback(view);
+        openDocumentPicker(false);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildHomePage$13(View view) {
+        performTapFeedback(view);
+        openDocumentPicker(true);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildHomePage$14(View view) {
+        performTapFeedback(view);
+        openPage("queue");
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildHomePage$15(View view) {
+        performTapFeedback(view);
+        openPage("setup");
+    }
+
+    private ArrayList<String> recentLogLines(int i) {
+        String[] split = this.activityLog.toString().trim().split("\\n");
+        ArrayList<String> arrayList = new ArrayList<>();
+        for (int length = split.length - 1; length >= 0 && arrayList.size() < i; length--) {
+            String trim = split[length].trim();
+            if (!trim.isEmpty() && !trim.contains(getString(R.string.text_050)) && !trim.contains("HP P1005 activity log")) {
+                arrayList.add(0, trim);
+            }
+        }
+        return arrayList;
+    }
+
+    private void buildPrintPage(LinearLayout linearLayout) {
+        String string;
+        pageHeader(linearLayout, null, getString(R.string.text_036), getString(R.string.text_051), false);
+        LinearLayout card = card();
+        LinearLayout horizontal = horizontal();
+        LinearLayout linearLayout2 = new LinearLayout(this);
+        linearLayout2.setGravity(17);
+        linearLayout2.setBackground(flat(iconWell(), 15));
+        ImageView imageView = new ImageView(this);
+        imageView.setImageResource(R.drawable.ic_doc);
+        imageView.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
+        linearLayout2.addView(imageView, new LinearLayout.LayoutParams(dp(24.0f), dp(24.0f)));
+        horizontal.addView(linearLayout2, new LinearLayout.LayoutParams(dp(46.0f), dp(46.0f)));
+        LinearLayout vertical = vertical();
+        vertical.setPaddingRelative(dp(12.0f), 0, 0, 0);
+        vertical.addView(label(getString(R.string.text_052), 16.0f, textPrimary(), true), margin(0, 0, 0, 4));
+        vertical.addView(label(this.selectedDocumentUri == null ? getString(R.string.text_053) : this.selectedDocumentName, 11.5f, textSecondary(), false));
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        card.addView(horizontal, margin(0, 0, 0, 13));
+        if (this.selectedDocumentUri == null) {
+            string = getString(R.string.text_054);
+        } else {
+            DocumentRenderer documentRenderer = this.documentRenderer;
+            if (documentRenderer != null && documentRenderer.isSupported()) {
+                string = this.documentRenderer.getPageCount() + getString(R.string.text_055) + this.documentRenderer.getFormatLabel();
+            } else {
+                string = getString(R.string.text_056);
+            }
+        }
+        TextView label = label(string, 12.0f, textSecondary(), false);
+        label.setLineSpacing(dp(3.0f), 1.0f);
+        card.addView(label, margin(0, 0, 0, 13));
+        LinearLayout horizontal2 = horizontal();
+        Button bigPrimaryButton = bigPrimaryButton(getString(this.selectedDocumentUri == null ? R.string.text_057 : R.string.text_058));
+        bigPrimaryButton.setTextSize(14.5f);
+        bigPrimaryButton.setMinHeight(dp(48.0f));
+        bigPrimaryButton.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda90
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildPrintPage$16(view);
+            }
+        });
+        horizontal2.addView(bigPrimaryButton, new LinearLayout.LayoutParams(0, dp(48.0f), 1.0f));
+        Button button = tonalButton(getString(R.string.text_059), 13.5f);
+        button.setMinHeight(dp(48.0f));
+        button.setEnabled(this.selectedDocumentUri != null);
+        button.setAlpha(this.selectedDocumentUri != null ? 1.0f : 0.5f);
+        button.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda91
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildPrintPage$17(view);
+            }
+        });
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, dp(48.0f), 1.0f);
+        layoutParams.setMarginStart(dp(9.0f));
+        horizontal2.addView(button, layoutParams);
+        card.addView(horizontal2);
+        LinearLayout card2 = card();
+        LinearLayout horizontal3 = horizontal();
+        LinearLayout linearLayout3 = new LinearLayout(this);
+        linearLayout3.setGravity(17);
+        linearLayout3.setBackground(flat(iconWell(), 15));
+        ImageView imageView2 = new ImageView(this);
+        imageView2.setImageResource(R.drawable.ic_nav_printer);
+        imageView2.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
+        linearLayout3.addView(imageView2, new LinearLayout.LayoutParams(dp(24.0f), dp(24.0f)));
+        horizontal3.addView(linearLayout3, new LinearLayout.LayoutParams(dp(46.0f), dp(46.0f)));
+        LinearLayout vertical2 = vertical();
+        vertical2.setPaddingRelative(dp(12.0f), 0, 0, 0);
+        vertical2.addView(label(getString(R.string.text_060), 16.0f, textPrimary(), true), margin(0, 0, 0, 4));
+        vertical2.addView(label(getString(R.string.text_061), 11.5f, textSecondary(), false));
+        horizontal3.addView(vertical2, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        card2.addView(horizontal3, margin(0, 0, 0, 13));
+        TextView label2 = label(getString(R.string.text_062), 12.0f, textSecondary(), false);
+        label2.setLineSpacing(dp(3.0f), 1.0f);
+        card2.addView(label2, margin(0, 0, 0, 14));
+        Button button2 = tonalButton(getString(R.string.text_063), 14.5f);
+        button2.setMinHeight(dp(48.0f));
+        button2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda92
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildPrintPage$18(view);
+            }
+        });
+        card2.addView(button2, new LinearLayout.LayoutParams(-1, dp(48.0f)));
+        addPair(linearLayout, card, card2);
+        Button button3 = tonalButton(getString(R.string.text_064), 14.5f);
+        button3.setMinHeight(dp(52.0f));
+        button3.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda93
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildPrintPage$19(view);
+            }
+        });
+        linearLayout.addView(button3, new LinearLayout.LayoutParams(-1, dp(52.0f)));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPrintPage$16(View view) {
+        performTapFeedback(view);
+        openDocumentPicker(false);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPrintPage$17(View view) {
+        if (this.selectedDocumentUri == null) {
+            openDocumentPicker(false);
+        } else {
+            openPage("preview");
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPrintPage$18(View view) {
+        performTapFeedback(view);
+        printBuiltInTestPage();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPrintPage$19(View view) {
+        performTapFeedback(view);
+        openPage("settings");
+    }
+
+    private void addToolRow(LinearLayout linearLayout, String str, String str2, String str3, final Runnable runnable) {
+        LinearLayout horizontal = horizontal();
+        horizontal.setPadding(0, dp(12.0f), 0, dp(12.0f));
+        LinearLayout vertical = vertical();
+        vertical.addView(label(str, 16.0f, textPrimary(), true), margin(0, 0, 0, 4));
+        TextView label = label(str2, 13.0f, textSecondary(), false);
+        label.setMaxLines(3);
+        vertical.addView(label);
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        Button button = tonalButton(str3, 13.0f);
+        button.setMinHeight(dp(38.0f));
+        button.setPadding(dp(8.0f), 0, dp(8.0f), 0);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(dp(76.0f), dp(38.0f));
+        layoutParams.setMarginStart(dp(10.0f));
+        horizontal.addView(button, layoutParams);
+        button.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda124
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$addToolRow$20(runnable, view);
+            }
+        });
+        linearLayout.addView(horizontal, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$addToolRow$20(Runnable runnable, View view) {
+        performTapFeedback(view);
+        runnable.run();
+    }
+
+    private void addSeparator(LinearLayout linearLayout) {
+        View view = new View(this);
+        view.setBackgroundColor(dividerColor());
+        linearLayout.addView(view, new LinearLayout.LayoutParams(-1, dp(1.0f)));
+    }
+
+    private void buildQueuePage(LinearLayout linearLayout) {
+        pageHeader(linearLayout, "HP LaserJet P1005", getString(R.string.text_037), getString(R.string.text_065), false);
+        LinearLayout vertical = vertical();
+        LinearLayout vertical2 = vertical();
+        vertical.addView(sectionLabel(getString(R.string.text_066)), margin(2, 0, 0, 8));
+        if (this.printInProgress && this.currentJobName != null) {
+            LinearLayout card = card();
+            LinearLayout horizontal = horizontal();
+            LinearLayout linearLayout2 = new LinearLayout(this);
+            linearLayout2.setGravity(17);
+            linearLayout2.setBackground(flat(iconWell(), 13));
+            ImageView imageView = new ImageView(this);
+            imageView.setImageResource(R.drawable.ic_doc);
+            imageView.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
+            linearLayout2.addView(imageView, new LinearLayout.LayoutParams(dp(20.0f), dp(20.0f)));
+            horizontal.addView(linearLayout2, new LinearLayout.LayoutParams(dp(40.0f), dp(40.0f)));
+            LinearLayout vertical3 = vertical();
+            vertical3.setPaddingRelative(dp(11.0f), 0, 0, 0);
+            TextView label = label(this.currentJobName, 14.0f, textPrimary(), true);
+            label.setTextAlignment(5);
+            label.setMaxLines(1);
+            label.setEllipsize(TextUtils.TruncateAt.END);
+            vertical3.addView(label, margin(0, 0, 0, 3));
+            vertical3.addView(label(getString(R.string.text_067) + Math.min(this.currentJobDone + 1, Math.max(this.currentJobTotal, 1)) + getString(R.string.text_016) + Math.max(this.currentJobTotal, 1), 11.5f, textSecondary(), false));
+            horizontal.addView(vertical3, new LinearLayout.LayoutParams(0, -2, 1.0f));
+            card.addView(horizontal, margin(0, 0, 0, 4));
+            ProgressBar progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+            progressBar.setMax(Math.max(this.currentJobTotal, 1));
+            progressBar.setProgress(Math.min(this.currentJobDone, Math.max(this.currentJobTotal, 1)));
+            progressBar.setProgressTintList(ColorStateList.valueOf(primaryColor()));
+            progressBar.setProgressBackgroundTintList(ColorStateList.valueOf(trackColor()));
+            progressBar.setProgressBackgroundTintMode(PorterDuff.Mode.SRC_IN);
+            card.addView(progressBar, new LinearLayout.LayoutParams(-1, dp(8.0f)));
+            Button button = tonalButton(getString(R.string.text_068), 13.5f);
+            button.setMinHeight(dp(44.0f));
+            button.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda59
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$buildQueuePage$21(view);
+                }
+            });
+            card.addView(button, margin(0, 11, 0, 0));
+            vertical.addView(card, margin(0, 0, 0, 16));
+        } else {
+            LinearLayout card2 = card();
+            card2.setGravity(1);
+            card2.addView(label(getString(R.string.text_070), 13.5f, textSecondary(), false), margin(0, 6, 0, 6));
+            vertical.addView(card2, margin(0, 0, 0, 16));
+        }
+        vertical.addView(sectionLabel(getString(R.string.text_071)), margin(2, 0, 0, 8));
+        if (this.selectedDocumentUri != null) {
+            LinearLayout card3 = card();
+            card3.setPadding(dp(14.0f), dp(12.0f), dp(14.0f), dp(12.0f));
+            LinearLayout horizontal2 = horizontal();
+            LinearLayout linearLayout3 = new LinearLayout(this);
+            linearLayout3.setGravity(17);
+            linearLayout3.setBackground(flat(iconWell(), 13));
+            ImageView imageView2 = new ImageView(this);
+            DocumentRenderer documentRenderer = this.documentRenderer;
+            imageView2.setImageResource((documentRenderer == null || !documentRenderer.isImage()) ? R.drawable.ic_doc : R.drawable.ic_image);
+            imageView2.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
+            linearLayout3.addView(imageView2, new LinearLayout.LayoutParams(dp(20.0f), dp(20.0f)));
+            horizontal2.addView(linearLayout3, new LinearLayout.LayoutParams(dp(40.0f), dp(40.0f)));
+            LinearLayout vertical4 = vertical();
+            vertical4.setPaddingRelative(dp(11.0f), 0, 0, 0);
+            TextView label2 = label(this.selectedDocumentName, 13.5f, textPrimary(), true);
+            label2.setTextAlignment(5);
+            label2.setMaxLines(1);
+            label2.setEllipsize(TextUtils.TruncateAt.END);
+            vertical4.addView(label2, margin(0, 0, 0, 3));
+            vertical4.addView(label(getString(this.printInProgress ? R.string.text_072 : R.string.text_073), 11.5f, textSecondary(), false));
+            horizontal2.addView(vertical4, new LinearLayout.LayoutParams(0, -2, 1.0f));
+            card3.addView(horizontal2);
+            vertical.addView(card3, margin(0, 0, 0, 16));
+        } else {
+            LinearLayout card4 = card();
+            card4.setGravity(1);
+            card4.addView(label(getString(R.string.text_074), 13.5f, textSecondary(), false), margin(0, 6, 0, 6));
+            vertical.addView(card4, margin(0, 0, 0, 16));
+        }
+        vertical2.addView(sectionLabel(getString(R.string.text_075)), margin(2, 0, 0, 8));
+        LinearLayout card5 = card();
+        card5.setPadding(dp(14.0f), dp(6.0f), dp(14.0f), dp(6.0f));
+        ArrayList<String> recentLogLines = recentLogLines(8);
+        if (recentLogLines.isEmpty()) {
+            card5.addView(label(getString(R.string.text_076), 12.5f, textSecondary(), false), margin(0, 10, 0, 10));
+        } else {
+            for (int size = recentLogLines.size() - 1; size >= 0; size--) {
+                TextView label3 = label(recentLogLines.get(size), 12.0f, textPrimary(), false);
+                label3.setLineSpacing(dp(3.0f), 1.0f);
+                card5.addView(label3, margin(2, 9, 2, 9));
+                if (size > 0) {
+                    addSeparator(card5);
+                }
+            }
+        }
+        vertical2.addView(card5, margin(0, 0, 0, 14));
+        addPair(linearLayout, vertical, vertical2);
+        TextView label4 = label(getString(R.string.text_077), 11.0f, textSecondary(), false);
+        label4.setLineSpacing(dp(3.0f), 1.0f);
+        linearLayout.addView(label4, margin(3, 0, 3, 8));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildQueuePage$21(View view) {
+        performTapFeedback(view);
+        this.jobCancelRequested = true;
+        systemToast(getString(R.string.text_069), 1).show();
+    }
+
+    private void buildPreviewPage(LinearLayout linearLayout) {
+        String string;
+        Runnable mainActivity$$ExternalSyntheticLambda112;
+        Runnable mainActivity$$ExternalSyntheticLambda114;
+        pageAppBar(linearLayout, getString(R.string.text_078));
+        if (this.selectedDocumentUri == null) {
+            LinearLayout card = card();
+            card.setGravity(1);
+            card.setPadding(dp(22.0f), dp(26.0f), dp(22.0f), dp(22.0f));
+            LinearLayout linearLayout2 = new LinearLayout(this);
+            linearLayout2.setGravity(17);
+            linearLayout2.setBackground(flat(iconWell(), 18));
+            ImageView imageView = new ImageView(this);
+            imageView.setImageResource(R.drawable.ic_doc);
+            imageView.setColorFilter(tonalText(), PorterDuff.Mode.SRC_IN);
+            linearLayout2.addView(imageView, new LinearLayout.LayoutParams(dp(26.0f), dp(26.0f)));
+            card.addView(linearLayout2, new LinearLayout.LayoutParams(dp(54.0f), dp(54.0f)));
+            card.addView(label(getString(R.string.text_079), 17.0f, textPrimary(), true), margin(0, 14, 0, 6));
+            card.addView(label(getString(R.string.text_080), 12.0f, textSecondary(), false), margin(0, 0, 0, 15));
+            Button bigPrimaryButton = bigPrimaryButton(getString(R.string.text_081));
+            bigPrimaryButton.setMinHeight(dp(48.0f));
+            bigPrimaryButton.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda40
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$buildPreviewPage$22(view);
+                }
+            });
+            card.addView(bigPrimaryButton, new LinearLayout.LayoutParams(-1, dp(48.0f)));
+            linearLayout.addView(card);
             return;
         }
-
-        boolean supported = documentRenderer != null && documentRenderer.isSupported();
-        String format = documentRenderer == null ? selectedDocumentMime : documentRenderer.getFormatLabel();
-        int pages = supported ? documentRenderer.getPageCount() : 0;
-
-        LinearLayout fileCard = card();
-        LinearLayout fileHeader = horizontal();
-        LinearLayout fileWell = new LinearLayout(this);
-        fileWell.setGravity(Gravity.CENTER);
-        fileWell.setBackground(verticalGradient(primaryColor(), primaryDeep(), 15));
-        ImageView fileIcon = new ImageView(this);
-        fileIcon.setImageResource(documentRenderer != null && documentRenderer.isImage()
-                ? R.drawable.ic_image : R.drawable.ic_doc);
-        fileIcon.setColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN);
-        fileWell.addView(fileIcon, new LinearLayout.LayoutParams(dp(24), dp(24)));
-        fileHeader.addView(fileWell, new LinearLayout.LayoutParams(dp(46), dp(46)));
-        LinearLayout fileInfo = vertical();
-        fileInfo.setPadding(dp(11), 0, dp(4), 0);
-        TextView fileTitle = label(selectedDocumentName, 13.5f, textPrimary(), true);
-        // Align to the view's logical start (right in RTL) instead of the text's own
-        // direction, so LTR filenames sit flush with the icon side and still read LTR.
-        fileTitle.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-        fileTitle.setMaxLines(2);
-        fileTitle.setEllipsize(TextUtils.TruncateAt.END);
-        fileInfo.addView(fileTitle, margin(0, 0, 0, 4));
-        TextView fileMeta = label(supported ? pages + " صفحة · " + format : "لا يمكن معاينة هذا التنسيق مباشرة",
-                11, supported ? okText() : warnText(), true);
-        fileMeta.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-        fileMeta.setMaxLines(1);
-        fileMeta.setEllipsize(TextUtils.TruncateAt.END);
-        fileInfo.addView(fileMeta);
-        fileHeader.addView(fileInfo, new LinearLayout.LayoutParams(0, -2, 1f));
-        TextView chooseAnother = label("تغيير", 12, tonalText(), true);
-        chooseAnother.setPadding(dp(8), dp(8), 0, dp(8));
-        chooseAnother.setOnClickListener(v -> { performTapFeedback(v); openDocumentPicker(false); });
-        fileHeader.addView(chooseAnother);
-        fileCard.addView(fileHeader, margin(0, 0, 0, 13));
-
-        if (supported) {
-            LinearLayout pageMeta = horizontal();
-            pageMeta.addView(label("الصفحة " + (currentPreviewPage + 1) + " من " + pages,
-                    10.5f, tonalText(), true), new LinearLayout.LayoutParams(0, -2, 1f));
-            pageMeta.addView(label(paperSize + " · " + orientationLabel(), 10.5f, textSecondary(), true));
-            fileCard.addView(pageMeta, margin(0, 0, 0, 10));
-
-            FrameLayout paper = new FrameLayout(this);
-            paper.setBackground(flat(darkMode ? 0xFF2A2A2F : 0xFFF2F3F5, 8));
-            paper.setPadding(dp(9), dp(9), dp(9), dp(9));
-            ImageView image = new ImageView(this);
-            image.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            image.setAdjustViewBounds(true);
-            image.setContentDescription("معاينة الصفحة " + (currentPreviewPage + 1));
-            try {
-                Bitmap next = documentRenderer.renderPage(currentPreviewPage, dp(315), dp(410));
-                Bitmap old = currentPreviewBitmap;
-                currentPreviewBitmap = next;
-                image.setImageBitmap(next);
-                if (old != null && old != next && !old.isRecycled()) old.recycle();
-            } catch (Exception e) {
-                image.setImageDrawable(null);
-                append("فشل عرض المعاينة: " + e.getMessage());
+        DocumentRenderer documentRenderer = this.documentRenderer;
+        boolean z = documentRenderer != null && documentRenderer.isSupported();
+        DocumentRenderer documentRenderer2 = this.documentRenderer;
+        String formatLabel = documentRenderer2 == null ? this.selectedDocumentMime : documentRenderer2.getFormatLabel();
+        int pageCount = z ? this.documentRenderer.getPageCount() : 0;
+        LinearLayout card2 = card();
+        LinearLayout horizontal = horizontal();
+        LinearLayout linearLayout3 = new LinearLayout(this);
+        linearLayout3.setGravity(17);
+        linearLayout3.setBackground(verticalGradient(primaryColor(), primaryDeep(), 15));
+        ImageView imageView2 = new ImageView(this);
+        DocumentRenderer documentRenderer3 = this.documentRenderer;
+        imageView2.setImageResource((documentRenderer3 == null || !documentRenderer3.isImage()) ? R.drawable.ic_doc : R.drawable.ic_image);
+        imageView2.setColorFilter(-1, PorterDuff.Mode.SRC_IN);
+        linearLayout3.addView(imageView2, new LinearLayout.LayoutParams(dp(24.0f), dp(24.0f)));
+        horizontal.addView(linearLayout3, new LinearLayout.LayoutParams(dp(46.0f), dp(46.0f)));
+        LinearLayout vertical = vertical();
+        vertical.setPadding(dp(11.0f), 0, dp(4.0f), 0);
+        TextView label = label(this.selectedDocumentName, 13.5f, textPrimary(), true);
+        label.setTextAlignment(5);
+        label.setMaxLines(2);
+        label.setEllipsize(TextUtils.TruncateAt.END);
+        vertical.addView(label, margin(0, 0, 0, 4));
+        if (z) {
+            string = pageCount + getString(R.string.text_055) + formatLabel;
+        } else {
+            string = getString(R.string.text_082);
+        }
+        TextView label2 = label(string, 11.0f, z ? okText() : warnText(), true);
+        label2.setTextAlignment(5);
+        label2.setMaxLines(1);
+        label2.setEllipsize(TextUtils.TruncateAt.END);
+        vertical.addView(label2);
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        TextView label3 = label(getString(R.string.text_083), 12.0f, tonalText(), true);
+        label3.setPadding(dp(8.0f), dp(8.0f), 0, dp(8.0f));
+        label3.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda43
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildPreviewPage$23(view);
             }
-            paper.addView(image, new FrameLayout.LayoutParams(-1, dp(360), Gravity.CENTER));
-            fileCard.addView(paper, margin(0, 0, 0, 12));
-
-            LinearLayout pageNav = horizontal();
-            Button previous = tonalButton("السابقة", 13f);
-            previous.setMinHeight(dp(43));
-            previous.setEnabled(currentPreviewPage > 0);
-            previous.setAlpha(currentPreviewPage > 0 ? 1f : 0.5f);
-            previous.setOnClickListener(v -> {
-                currentPreviewPage = Math.max(0, currentPreviewPage - 1);
-                renderApp();
+        });
+        horizontal.addView(label3);
+        card2.addView(horizontal, margin(0, 0, 0, 13));
+        if (z) {
+            ArrayList<SheetJob> previewPlan = previewPlan();
+            int size = previewPlan.size();
+            if (this.currentPreviewPage >= size) {
+                this.currentPreviewPage = Math.max(0, size - 1);
+            }
+            LinearLayout horizontal2 = horizontal();
+            boolean equals = "size".equals(this.layoutMode);
+            StringBuilder sb = new StringBuilder();
+            sb.append(getString(equals ? R.string.text_084 : R.string.text_085));
+            sb.append(this.currentPreviewPage + 1);
+            sb.append(getString(R.string.text_016));
+            sb.append(size);
+            horizontal2.addView(label(sb.toString(), 10.5f, tonalText(), true), new LinearLayout.LayoutParams(0, -2, 1.0f));
+            horizontal2.addView(label(this.paperSize + " · " + modeLabel(), 10.5f, textSecondary(), true));
+            card2.addView(horizontal2, margin(0, 0, 0, 10));
+            FrameLayout frameLayout = new FrameLayout(this);
+            frameLayout.setBackground(flat(this.darkMode ? -14013905 : -855051, 8));
+            frameLayout.setPadding(dp(9.0f), dp(9.0f), dp(9.0f), dp(9.0f));
+            ImageView imageView3 = new ImageView(this);
+            imageView3.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            imageView3.setAdjustViewBounds(true);
+            imageView3.setContentDescription(getString(R.string.text_086) + (this.currentPreviewPage + 1));
+            try {
+                Bitmap renderPreviewSheet = renderPreviewSheet(buildSheetSpec(dp(315.0f)), previewPlan.get(this.currentPreviewPage));
+                Bitmap bitmap = this.currentPreviewBitmap;
+                this.currentPreviewBitmap = renderPreviewSheet;
+                imageView3.setImageBitmap(renderPreviewSheet);
+                if (bitmap != null && bitmap != renderPreviewSheet && !bitmap.isRecycled()) {
+                    bitmap.recycle();
+                }
+            } catch (Exception e) {
+                imageView3.setImageDrawable(null);
+                lambda$append$117(getString(R.string.text_087) + e.getMessage());
+            }
+            frameLayout.addView(imageView3, new FrameLayout.LayoutParams(-1, dp(360.0f), 17));
+            card2.addView(frameLayout, margin(0, 0, 0, 12));
+            LinearLayout horizontal3 = horizontal();
+            Button button = tonalButton(getString(R.string.text_088), 13.0f);
+            button.setMinHeight(dp(43.0f));
+            button.setEnabled(this.currentPreviewPage > 0);
+            button.setAlpha(this.currentPreviewPage > 0 ? 1.0f : 0.5f);
+            button.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda44
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$buildPreviewPage$24(view);
+                }
             });
-            pageNav.addView(previous, new LinearLayout.LayoutParams(0, dp(43), 1f));
-            Button next = tonalButton("التالية", 13f);
-            next.setMinHeight(dp(43));
-            next.setEnabled(currentPreviewPage < pages - 1);
-            next.setAlpha(currentPreviewPage < pages - 1 ? 1f : 0.5f);
-            next.setOnClickListener(v -> {
-                currentPreviewPage = Math.min(pages - 1, currentPreviewPage + 1);
-                renderApp();
+            horizontal3.addView(button, new LinearLayout.LayoutParams(0, dp(43.0f), 1.0f));
+            Button button2 = tonalButton(getString(R.string.text_089), 13.0f);
+            button2.setMinHeight(dp(43.0f));
+            final int size2 = previewPlan.size();
+            int i = size2 - 1;
+            button2.setEnabled(this.currentPreviewPage < i);
+            button2.setAlpha(this.currentPreviewPage < i ? 1.0f : 0.5f);
+            button2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda45
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$buildPreviewPage$25(size2, view);
+                }
             });
-            LinearLayout.LayoutParams nextParams = new LinearLayout.LayoutParams(0, dp(43), 1f);
-            nextParams.setMarginStart(dp(9));
-            pageNav.addView(next, nextParams);
-            fileCard.addView(pageNav);
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, dp(43.0f), 1.0f);
+            layoutParams.setMarginStart(dp(9.0f));
+            horizontal3.addView(button2, layoutParams);
+            card2.addView(horizontal3);
         } else {
-            TextView message = label("يمكن تصفح هذا الملف، لكن هذا الإصدار لا يستطيع تحويله إلى معاينة طباعة. افتحه في تطبيق Office متوافق وصدّره أو شاركه كملف PDF، ثم اختر ملف PDF هنا.",
-                    12, textSecondary(), false);
-            message.setLineSpacing(dp(4), 1f);
-            fileCard.addView(message, margin(0, 0, 0, 13));
-            Button openExternal = bigPrimaryButton("فتح في تطبيق آخر");
-            openExternal.setMinHeight(dp(46));
-            openExternal.setOnClickListener(v -> openSelectedFileExternally());
-            fileCard.addView(openExternal, new LinearLayout.LayoutParams(-1, dp(46)));
+            TextView label4 = label(getString(R.string.text_090), 12.0f, textSecondary(), false);
+            label4.setLineSpacing(dp(4.0f), 1.0f);
+            card2.addView(label4, margin(0, 0, 0, 13));
+            Button bigPrimaryButton2 = bigPrimaryButton(getString(R.string.text_091));
+            bigPrimaryButton2.setMinHeight(dp(46.0f));
+            bigPrimaryButton2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda46
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$buildPreviewPage$26(view);
+                }
+            });
+            card2.addView(bigPrimaryButton2, new LinearLayout.LayoutParams(-1, dp(46.0f)));
         }
-        if (supported) {
-            LinearLayout options = card();
-            options.setPadding(dp(16), dp(5), dp(16), dp(5));
-            addOptionRow(options, "حجم الورق", paperSize, this::showPaperSizeOptions);
-            addSeparator(options);
-            addOptionRow(options, "عدد النسخ", String.valueOf(copies), this::showCopiesOptions);
-            addSeparator(options);
-            addOptionRow(options, "الصفحات", pageRangeSummaryAr(), this::showPageRangeOptions);
-            addSeparator(options);
-            addOptionRow(options, "الطباعة على الوجهين", duplexLabel(), this::showDuplexOptions);
-            addSeparator(options);
-            addOptionRow(options, "اتجاه الصفحة", orientationLabel(), this::showOrientationOptions);
-            addSeparator(options);
-            addOptionRow(options, "القياس", scaleLabel(), this::showScaleOptions);
-            addSeparator(options);
-            addOptionRow(options, "جودة الطباعة", qualityLabel(), this::showQualityOptions);
-
-            Button print = bigPrimaryButton(printInProgress ? "جارٍ الإرسال…" : "طباعة");
-            print.setEnabled(!printInProgress);
-            print.setAlpha(printInProgress ? 0.6f : 1f);
-            print.setOnClickListener(v -> { performTapFeedback(v); printSelectedDocument(); });
-
-            TextView note = label("طابعة HP LaserJet P1005 أحادية اللون؛ تُحوَّل المستندات والصور الملوّنة إلى إخراج أبيض وأسود.",
-                    11, textSecondary(), false);
-            note.setLineSpacing(dp(3), 1f);
-            LinearLayout previewSide = vertical();
-            previewSide.addView(options, margin(0, 0, 0, 13));
-            previewSide.addView(print, new LinearLayout.LayoutParams(-1, dp(56)));
-            previewSide.addView(note, margin(3, 12, 3, 4));
-            addPair(content, fileCard, previewSide);
-        } else {
-            content.addView(fileCard, margin(0, 0, 0, 13));
+        if (z) {
+            LinearLayout card3 = card();
+            card3.setPadding(dp(16.0f), dp(5.0f), dp(16.0f), dp(5.0f));
+            boolean equals2 = "booklet".equals(this.layoutMode);
+            addOptionRow(card3, getString(R.string.text_092), this.paperSize, new MainActivity$$ExternalSyntheticLambda111(this));
+            addSeparator(card3);
+            String string2 = getString(R.string.text_093);
+            String string3 = equals2 ? getString(R.string.text_094) : String.valueOf(this.copies);
+            if (equals2) {
+                mainActivity$$ExternalSyntheticLambda112 = new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda47
+                    @Override // java.lang.Runnable
+                    public final void run() {
+                        MainActivity.this.lambda$buildPreviewPage$27();
+                    }
+                };
+            } else {
+                mainActivity$$ExternalSyntheticLambda112 = new MainActivity$$ExternalSyntheticLambda112(this);
+            }
+            addOptionRow(card3, string2, string3, mainActivity$$ExternalSyntheticLambda112);
+            addSeparator(card3);
+            addOptionRow(card3, getString(R.string.text_096), pageRangeSummaryAr(), new MainActivity$$ExternalSyntheticLambda113(this));
+            addSeparator(card3);
+            String string4 = getString(R.string.text_097);
+            String string5 = equals2 ? getString(R.string.text_098) : duplexLabel();
+            if (equals2) {
+                mainActivity$$ExternalSyntheticLambda114 = new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda49
+                    @Override // java.lang.Runnable
+                    public final void run() {
+                        MainActivity.this.lambda$buildPreviewPage$28();
+                    }
+                };
+            } else {
+                mainActivity$$ExternalSyntheticLambda114 = new MainActivity$$ExternalSyntheticLambda114(this);
+            }
+            addOptionRow(card3, string4, string5, mainActivity$$ExternalSyntheticLambda114);
+            addSeparator(card3);
+            addOptionRow(card3, getString(R.string.text_100), layoutSummary(), new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda41
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$buildPreviewPage$29();
+                }
+            });
+            addSeparator(card3);
+            addOptionRow(card3, getString(R.string.text_101), qualityLabel(), new MainActivity$$ExternalSyntheticLambda116(this));
+            Button bigPrimaryButton3 = bigPrimaryButton(getString(this.printInProgress ? R.string.text_102 : R.string.text_036));
+            bigPrimaryButton3.setEnabled(!this.printInProgress);
+            bigPrimaryButton3.setAlpha(this.printInProgress ? 0.6f : 1.0f);
+            bigPrimaryButton3.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda42
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$buildPreviewPage$30(view);
+                }
+            });
+            TextView label5 = label(getString(R.string.text_103), 11.0f, textSecondary(), false);
+            label5.setLineSpacing(dp(3.0f), 1.0f);
+            LinearLayout vertical2 = vertical();
+            vertical2.addView(card3, margin(0, 0, 0, 13));
+            vertical2.addView(bigPrimaryButton3, new LinearLayout.LayoutParams(-1, dp(56.0f)));
+            vertical2.addView(label5, margin(3, 12, 3, 4));
+            addPair(linearLayout, card2, vertical2);
+            return;
         }
+        linearLayout.addView(card2, margin(0, 0, 0, 13));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPreviewPage$22(View view) {
+        performTapFeedback(view);
+        openDocumentPicker(false);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPreviewPage$23(View view) {
+        performTapFeedback(view);
+        openDocumentPicker(false);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPreviewPage$24(View view) {
+        this.currentPreviewPage = Math.max(0, this.currentPreviewPage - 1);
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPreviewPage$25(int i, View view) {
+        this.currentPreviewPage = Math.min(i - 1, this.currentPreviewPage + 1);
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPreviewPage$26(View view) {
+        openSelectedFileExternally();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPreviewPage$27() {
+        Toast.makeText(this, getString(R.string.text_095), 0).show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPreviewPage$28() {
+        Toast.makeText(this, getString(R.string.text_099), 0).show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPreviewPage$29() {
+        openPage("layout");
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildPreviewPage$30(View view) {
+        performTapFeedback(view);
+        printSelectedDocument();
     }
 
     private String duplexLabel() {
-        if ("manual-long".equals(duplexMode)) return "يدوي · حافة طويلة";
-        if ("manual-short".equals(duplexMode)) return "يدوي · حافة قصيرة";
-        return "إيقاف";
-    }
-
-    private String orientationLabel() {
-        return "landscape".equals(pageOrientation) ? "أفقي" : "عمودي";
-    }
-
-    private String scaleLabel() {
-        return fitToPage ? "ملاءمة الصفحة" : "ملء الصفحة";
+        return "manual-long".equals(this.duplexMode) ? getString(R.string.text_104) : "manual-short".equals(this.duplexMode) ? getString(R.string.text_105) : getString(R.string.text_106);
     }
 
     private String qualityLabel() {
-        return draftMode ? "مسودة" : (printDensity >= 4 ? "كثافة عالية" : "قياسية");
+        return getString(this.draftMode ? R.string.text_107 : this.printDensity >= 4 ? R.string.text_108 : R.string.text_109);
     }
 
     private String pageRangeSummaryAr() {
-        return pageRange == null || pageRange.trim().isEmpty() || "all".equalsIgnoreCase(pageRange.trim())
-                ? "الكل" : pageRange.trim();
+        String str = this.pageRange;
+        return (str == null || str.trim().isEmpty() || "all".equalsIgnoreCase(this.pageRange.trim())) ? getString(R.string.text_110) : this.pageRange.trim();
     }
 
-    private void addOptionRow(LinearLayout parent, String title, String value, Runnable action) {
-        addOptionRow(parent, title, value, action, true);
+    private void addOptionRow(LinearLayout linearLayout, String str, String str2, Runnable runnable) {
+        addOptionRow(linearLayout, str, str2, runnable, true);
     }
 
-    private void addOptionRow(LinearLayout parent, String title, String value, Runnable action, boolean showChevron) {
-        LinearLayout row = horizontal();
-        row.setPadding(0, dp(13), 0, dp(13));
-        row.addView(label(title, 13.5f, textPrimary(), true),
-                new LinearLayout.LayoutParams(0, -2, 1f));
-        TextView valueText = label(value, 12.5f, textSecondary(), false);
-        valueText.setMaxLines(1);
-        row.addView(valueText);
-        if (showChevron) {
-            ImageView chevron = new ImageView(this);
-            chevron.setImageResource(R.drawable.ic_chevron_left);
-            chevron.setColorFilter(textSecondary(), PorterDuff.Mode.SRC_IN);
-            LinearLayout.LayoutParams chevronParams = new LinearLayout.LayoutParams(dp(18), dp(18));
-            chevronParams.setMarginStart(dp(6));
-            row.addView(chevron, chevronParams);
+    private void addOptionRow(LinearLayout linearLayout, String str, String str2, final Runnable runnable, boolean z) {
+        LinearLayout horizontal = horizontal();
+        horizontal.setPadding(0, dp(13.0f), 0, dp(13.0f));
+        horizontal.addView(label(str, 16.0f, textPrimary(), true), new LinearLayout.LayoutParams(0, -2, 1.0f));
+        TextView label = label(str2, 13.0f, textSecondary(), false);
+        label.setMaxLines(1);
+        horizontal.addView(label);
+        if (z) {
+            ImageView imageView = new ImageView(this);
+            imageView.setImageResource(R.drawable.ic_chevron_left);
+            imageView.setScaleX(isArabic() ? 1.0f : -1.0f);
+            imageView.setColorFilter(textSecondary(), PorterDuff.Mode.SRC_IN);
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(dp(18.0f), dp(18.0f));
+            layoutParams.setMarginStart(dp(6.0f));
+            horizontal.addView(imageView, layoutParams);
         }
-        row.setClickable(true);
-        row.setFocusable(true);
-        row.setHapticFeedbackEnabled(hapticsEnabled);
-        row.setOnClickListener(v -> { performTapFeedback(v); action.run(); });
-        parent.addView(row, new LinearLayout.LayoutParams(-1, -2));
+        horizontal.setClickable(true);
+        horizontal.setFocusable(true);
+        horizontal.setHapticFeedbackEnabled(this.hapticsEnabled);
+        horizontal.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda74
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$addOptionRow$31(runnable, view);
+            }
+        });
+        linearLayout.addView(horizontal, new LinearLayout.LayoutParams(-1, -2));
     }
 
-    private interface IndexAction { void onChosen(int index); }
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$addOptionRow$31(Runnable runnable, View view) {
+        performTapFeedback(view);
+        runnable.run();
+    }
 
-    // One UI choice dialog (reviewed proposal): app-owned colors so dark mode is
-    // legible, radios at the start side, and a single centered إلغاء at the bottom.
     private AlertDialog.Builder dialogBuilder() {
-        return new AlertDialog.Builder(new android.view.ContextThemeWrapper(this,
-                darkMode ? android.R.style.Theme_Material_NoActionBar
-                        : android.R.style.Theme_Material_Light_NoActionBar));
+        return new AlertDialog.Builder(new ContextThemeWrapper(this, this.darkMode ? android.R.style.Theme_Material_NoActionBar : android.R.style.Theme_Material_Light_NoActionBar));
     }
 
-    private void showSelectionDialog(String title, String[] options, int checked, IndexAction action) {
-        android.app.Dialog dialog = new android.app.Dialog(this);
-        LinearLayout sheet = vertical();
-        sheet.setBackground(flat(darkMode ? 0xFF24262B : 0xFFFFFFFF, 28));
-        sheet.setPadding(dp(8), dp(20), dp(8), dp(8));
-        TextView heading = label(title, 17.5f, darkMode ? 0xFFF2F2F4 : 0xFF1B1B1B, true);
-        sheet.addView(heading, margin(18, 0, 18, 6));
-        for (int i = 0; i < options.length; i++) {
-            final int index = i;
-            LinearLayout row = horizontal();
-            row.setGravity(Gravity.CENTER_VERTICAL);
-            row.setPadding(dp(18), dp(12), dp(18), dp(12));
-            row.addView(radioDot(index == checked));
-            TextView optionLabel = label(options[i], 14.5f, darkMode ? 0xFFF2F2F4 : 0xFF1B1B1B, false);
-            LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(0, -2, 1f);
-            // Start margin, not absolute left: an absolute left margin is on the wrong
-            // side in RTL and left the label flush against the radio ring (real-device
-            // overlap in duplex/source/scaling dialogs).
-            labelParams.setMarginStart(dp(14));
-            row.addView(optionLabel, labelParams);
-            row.setClickable(true);
-            row.setFocusable(true);
-            row.setHapticFeedbackEnabled(hapticsEnabled);
-            row.setOnClickListener(v -> {
-                performTapFeedback(v);
-                action.onChosen(index);
-                dialog.dismiss();
-                renderApp();
+    private void showSelectionDialog(String str, String[] strArr, int i, final IndexAction indexAction) {
+        final Dialog dialog = new Dialog(this);
+        LinearLayout vertical = vertical();
+        vertical.setBackground(flat(this.darkMode ? -14408149 : -1, 28));
+        vertical.setPadding(dp(8.0f), dp(20.0f), dp(8.0f), dp(8.0f));
+        vertical.addView(label(str, 17.5f, this.darkMode ? -855308 : -15000805, true), margin(18, 0, 18, 6));
+        int i2 = 0;
+        while (i2 < strArr.length) {
+            final int i2f = i2;
+            LinearLayout horizontal = horizontal();
+            horizontal.setGravity(16);
+            horizontal.setPadding(dp(18.0f), dp(12.0f), dp(18.0f), dp(12.0f));
+            horizontal.addView(radioDot(i2 == i));
+            View label = label(strArr[i2], 14.5f, this.darkMode ? -855308 : -15000805, false);
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, -2, 1.0f);
+            layoutParams.setMarginStart(dp(14.0f));
+            horizontal.addView(label, layoutParams);
+            horizontal.setClickable(true);
+            horizontal.setFocusable(true);
+            horizontal.setHapticFeedbackEnabled(this.hapticsEnabled);
+            horizontal.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda54
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$showSelectionDialog$32(indexAction, i2f, dialog, view);
+                }
             });
-            sheet.addView(row);
+            vertical.addView(horizontal);
+            i2++;
         }
-        TextView cancel = label("إلغاء", 14, darkMode ? 0xFF4C9AFF : 0xFF0072DE, true);
-        cancel.setGravity(Gravity.CENTER);
-        cancel.setPadding(dp(10), dp(10), dp(10), dp(10));
-        LinearLayout cancelRow = horizontal();
-        cancelRow.setGravity(Gravity.CENTER);
-        cancelRow.addView(cancel);
-        cancelRow.setClickable(true);
-        cancelRow.setFocusable(true);
-        cancelRow.setHapticFeedbackEnabled(hapticsEnabled);
-        cancelRow.setOnClickListener(v -> { performTapFeedback(v); dialog.dismiss(); });
-        sheet.addView(cancelRow, margin(0, 6, 0, 4));
-        dialog.setContentView(sheet);
-        dialog.setOnShowListener(ignored -> styleDialogWindow(dialog));
+        TextView label2 = label(getString(R.string.text_111), 14.0f, this.darkMode ? -11756801 : -16747810, true);
+        label2.setGravity(17);
+        label2.setPadding(dp(10.0f), dp(10.0f), dp(10.0f), dp(10.0f));
+        LinearLayout horizontal2 = horizontal();
+        horizontal2.setGravity(17);
+        horizontal2.addView(label2);
+        horizontal2.setClickable(true);
+        horizontal2.setFocusable(true);
+        horizontal2.setHapticFeedbackEnabled(this.hapticsEnabled);
+        horizontal2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda55
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$showSelectionDialog$33(dialog, view);
+            }
+        });
+        vertical.addView(horizontal2, margin(0, 6, 0, 4));
+        dialog.setContentView(vertical);
+        styleDialogWindow(dialog);
         dialog.show();
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setLayout(dp(330), WindowManager.LayoutParams.WRAP_CONTENT);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showSelectionDialog$32(IndexAction indexAction, int i, Dialog dialog, View view) {
+        performTapFeedback(view);
+        indexAction.onChosen(i);
+        dialog.dismiss();
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showSelectionDialog$33(Dialog dialog, View view) {
+        performTapFeedback(view);
+        dialog.dismiss();
+    }
+
+    private View radioDot(boolean z) {
+        FrameLayout frameLayout = new FrameLayout(this);
+        int i = this.darkMode ? -11756801 : -16747810;
+        GradientDrawable gradientDrawable = new GradientDrawable();
+        gradientDrawable.setShape(1);
+        gradientDrawable.setColor(0);
+        gradientDrawable.setStroke(dp(2.0f), z ? i : -6645086);
+        frameLayout.setBackground(gradientDrawable);
+        if (z) {
+            View view = new View(this);
+            GradientDrawable gradientDrawable2 = new GradientDrawable();
+            gradientDrawable2.setShape(1);
+            gradientDrawable2.setColor(i);
+            view.setBackground(gradientDrawable2);
+            frameLayout.addView(view, new FrameLayout.LayoutParams(dp(11.0f), dp(11.0f), 17));
         }
+        frameLayout.setLayoutParams(new LinearLayout.LayoutParams(dp(22.0f), dp(22.0f)));
+        return frameLayout;
     }
 
-    // Radio indicator matching the reviewed proposal: 22dp ring, filled center when
-    // selected; blue accent in both modes.
-    private View radioDot(boolean selected) {
-        FrameLayout ring = new FrameLayout(this);
-        int accent = darkMode ? 0xFF4C9AFF : 0xFF0072DE;
-        GradientDrawable outer = new GradientDrawable();
-        outer.setShape(GradientDrawable.OVAL);
-        outer.setColor(Color.TRANSPARENT);
-        outer.setStroke(dp(2), selected ? accent : 0xFF9A9AA2);
-        ring.setBackground(outer);
-        if (selected) {
-            View dot = new View(this);
-            GradientDrawable inner = new GradientDrawable();
-            inner.setShape(GradientDrawable.OVAL);
-            inner.setColor(accent);
-            dot.setBackground(inner);
-            ring.addView(dot, new FrameLayout.LayoutParams(dp(11), dp(11), Gravity.CENTER));
-        }
-        ring.setLayoutParams(new LinearLayout.LayoutParams(dp(22), dp(22)));
-        return ring;
-    }
-
-    // Shared window styling for app dialogs: pinned RTL decor, dim, app-owned
-    // background, and window blur behind on API 31+ when enabled.
-    private void styleDialogWindow(android.app.Dialog dialog) {
+    private void styleDialogWindow(Dialog dialog) {
         Window window = dialog.getWindow();
-        if (window == null) return;
-        window.getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-        window.setDimAmount(0.18f);
-        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        // No blur-behind on modal dialogs: user direction (tablet showed a fully
-        // blurred backdrop while his phone did not - he wants the phone behavior
-        // everywhere). Dim only. The approved bottom-nav capsule keeps its own
-        // in-bounds background blur in showCapsuleNav().
+        if (window == null) {
+            return;
+        }
+        window.getDecorView().setLayoutDirection(appDirection());
+        window.addFlags(2);
+        window.setDimAmount(0.45f);
+        window.setBackgroundDrawable(new ColorDrawable(0));
+        window.setLayout(dp(330.0f), -2);
     }
 
-    private void showPaperSizeOptions() {
-        String[] options = {"A4 (210 × 297 مم)", "A5 (148 × 210 مم)", "Letter (8.5 × 11 بوصة)",
-                "Legal (8.5 × 14 بوصة)", "B5 (176 × 250 مم)"};
-        int selected = Math.max(0, Arrays.asList(paperSizes).indexOf(paperSize));
-        showSelectionDialog("حجم الورق", options, selected, which -> {
-            paperSize = paperSizes[which];
-            printPreferences.edit().putString("paper_size", paperSize).apply();
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showPaperSizeOptions() {
+        showSelectionDialog(getString(R.string.text_092), new String[]{getString(R.string.text_112), getString(R.string.text_113), getString(R.string.text_114), getString(R.string.text_115), getString(R.string.text_116)}, Math.max(0, Arrays.asList(this.paperSizes).indexOf(this.paperSize)), new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda12
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i) {
+                MainActivity.this.lambda$showPaperSizeOptions$34(i);
+            }
         });
     }
 
-    // One UI dialog chrome shared by the print-setting sheets (copies, page
-    // range): same rounded sheet family as showSelectionDialog, title +
-    // subtitle at the start side, and a two-button row - تطبيق filled,
-    // إلغاء tonal, equal halves.
-    private android.app.Dialog oneUIFormDialog(String title, String subtitle, View body,
-                                               Runnable onApply) {
-        android.app.Dialog dialog = new android.app.Dialog(this);
-        LinearLayout sheet = vertical();
-        sheet.setBackground(flat(darkMode ? 0xFF24262B : 0xFFFFFFFF, 28));
-        sheet.setPadding(dp(8), dp(20), dp(8), dp(8));
-        TextView heading = label(title, 17.5f, darkMode ? 0xFFF2F2F4 : 0xFF1B1B1B, true);
-        sheet.addView(heading, margin(18, 0, 18, subtitle != null ? 2 : 8));
-        if (subtitle != null) {
-            TextView sub = label(subtitle, 12.5f, textSecondary(), false);
-            sheet.addView(sub, margin(18, 0, 18, 8));
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showPaperSizeOptions$34(int i) {
+        this.paperSize = this.paperSizes[i];
+        this.printPreferences.edit().putString("paper_size", this.paperSize).apply();
+    }
+
+    private Dialog oneUIFormDialog(String str, String str2, View view, final FormApply formApply) {
+        final Dialog dialog = new Dialog(this);
+        LinearLayout vertical = vertical();
+        vertical.setBackground(flat(this.darkMode ? -14408149 : -1, 28));
+        vertical.setPadding(dp(8.0f), dp(20.0f), dp(8.0f), dp(8.0f));
+        vertical.addView(label(str, 17.5f, this.darkMode ? -855308 : -15000805, true), margin(18, 0, 18, str2 != null ? 2 : 8));
+        if (str2 != null) {
+            vertical.addView(label(str2, 12.5f, textSecondary(), false), margin(18, 0, 18, 8));
         }
-        sheet.addView(body, new LinearLayout.LayoutParams(-1, -2));
-        LinearLayout buttons = horizontal();
-        TextView apply = dialogButton("تطبيق", true);
-        TextView cancel = dialogButton("إلغاء", false);
-        apply.setOnClickListener(v -> { performTapFeedback(v); dialog.dismiss(); if (onApply != null) onApply.run(); });
-        cancel.setOnClickListener(v -> { performTapFeedback(v); dialog.dismiss(); });
-        LinearLayout.LayoutParams half = new LinearLayout.LayoutParams(0, dp(44), 1f);
-        LinearLayout.LayoutParams halfEnd = new LinearLayout.LayoutParams(0, dp(44), 1f);
-        halfEnd.setMarginStart(dp(8));
-        buttons.addView(apply, half);
-        buttons.addView(cancel, halfEnd);
-        sheet.addView(buttons, margin(10, 12, 10, 4));
-        dialog.setContentView(sheet);
-        dialog.setOnShowListener(ignored -> styleDialogWindow(dialog));
+        vertical.addView(view, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout horizontal = horizontal();
+        TextView dialogButton = dialogButton(getString(R.string.text_117), true);
+        TextView dialogButton2 = dialogButton(getString(R.string.text_111), false);
+        dialogButton.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda121
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view2) {
+                MainActivity.this.lambda$oneUIFormDialog$35(formApply, dialog, view2);
+            }
+        });
+        dialogButton2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda122
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view2) {
+                MainActivity.this.lambda$oneUIFormDialog$36(dialog, view2);
+            }
+        });
+        ViewGroup.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, dp(44.0f), 1.0f);
+        LinearLayout.LayoutParams layoutParams2 = new LinearLayout.LayoutParams(0, dp(44.0f), 1.0f);
+        layoutParams2.setMarginStart(dp(8.0f));
+        horizontal.addView(dialogButton, layoutParams);
+        horizontal.addView(dialogButton2, layoutParams2);
+        vertical.addView(horizontal, margin(10, 12, 10, 4));
+        dialog.setContentView(vertical);
+        styleDialogWindow(dialog);
         dialog.show();
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setLayout(dp(330), WindowManager.LayoutParams.WRAP_CONTENT);
-        }
         return dialog;
     }
 
-    private TextView dialogButton(String text, boolean primary) {
-        TextView button = label(text, 14, primary ? 0xFFFFFFFF : (darkMode ? 0xFFF2F2F4 : 0xFF1B1B1B), true);
-        button.setGravity(Gravity.CENTER);
-        button.setBackground(flat(primary ? (darkMode ? 0xFF2E6DB4 : 0xFF0072DE)
-                : (darkMode ? 0xFF3A3C42 : 0xFFE9E9EE), 22));
-        button.setClickable(true);
-        button.setFocusable(true);
-        button.setHapticFeedbackEnabled(hapticsEnabled);
-        return button;
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$oneUIFormDialog$35(FormApply formApply, Dialog dialog, View view) {
+        performTapFeedback(view);
+        if (formApply == null || formApply.apply()) {
+            dialog.dismiss();
+        }
     }
 
-    // The native wheel keeps LIGHT-theme colors (near-black digits and
-    // dividers) even when the sheet behind it is dark, reproducing his
-    // original unreadable-dark-dialog failure (review of gate run 40254680016
-    // capture 08d2). Tint digits via the public API-29 setter (wheel paint +
-    // selected EditText); older APIs and the divider drawable need
-    // best-effort field access - safe here because targetSdk 28 keeps those
-    // greylist members reflectable.
-    private void styleNumberPickerForSheet(NumberPicker picker) {
-        int digits = textPrimary();
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$oneUIFormDialog$36(Dialog dialog, View view) {
+        performTapFeedback(view);
+        dialog.dismiss();
+    }
+
+    private TextView dialogButton(String str, boolean z) {
+        int i;
+        int i2;
+        if (z) {
+            i = -1;
+        } else {
+            i = this.darkMode ? -855308 : -15000805;
+        }
+        TextView label = label(str, 14.0f, i, true);
+        label.setGravity(17);
+        if (z) {
+            i2 = this.darkMode ? -13734476 : -16747810;
+        } else {
+            i2 = this.darkMode ? -12960702 : -1447442;
+        }
+        label.setBackground(flat(i2, 22));
+        label.setClickable(true);
+        label.setFocusable(true);
+        label.setHapticFeedbackEnabled(this.hapticsEnabled);
+        return label;
+    }
+
+    private void styleNumberPickerForSheet(NumberPicker numberPicker) {
+        int textPrimary = textPrimary();
         if (Build.VERSION.SDK_INT >= 29) {
-            picker.setTextColor(digits);
+            numberPicker.setTextColor(textPrimary);
         } else {
             try {
-                java.lang.reflect.Field paint = NumberPicker.class.getDeclaredField("mSelectorWheelPaint");
-                paint.setAccessible(true);
-                ((android.graphics.Paint) paint.get(picker)).setColor(digits);
-            } catch (Exception ignored) {}
-            for (int i = 0; i < picker.getChildCount(); i++) {
-                View child = picker.getChildAt(i);
-                if (child instanceof EditText) ((EditText) child).setTextColor(digits);
+                Field declaredField = NumberPicker.class.getDeclaredField("mSelectorWheelPaint");
+                declaredField.setAccessible(true);
+                ((Paint) declaredField.get(numberPicker)).setColor(textPrimary);
+            } catch (Exception unused) {
+            }
+            for (int i = 0; i < numberPicker.getChildCount(); i++) {
+                View childAt = numberPicker.getChildAt(i);
+                if (childAt instanceof EditText) {
+                    ((EditText) childAt).setTextColor(textPrimary);
+                }
             }
         }
         try {
-            java.lang.reflect.Field divider = NumberPicker.class.getDeclaredField("mSelectionDivider");
-            divider.setAccessible(true);
-            GradientDrawable line = new GradientDrawable();
-            line.setColor(darkMode ? 0xFF50535C : 0xFFDCDCE4);
-            line.setSize(-1, dp(1));
-            divider.set(picker, line);
-        } catch (Exception ignored) {}
+            Field declaredField2 = NumberPicker.class.getDeclaredField("mSelectionDivider");
+            declaredField2.setAccessible(true);
+            GradientDrawable gradientDrawable = new GradientDrawable();
+            gradientDrawable.setColor(this.darkMode ? -11512996 : -2302748);
+            gradientDrawable.setSize(-1, dp(1.0f));
+            declaredField2.set(numberPicker, gradientDrawable);
+        } catch (Exception unused2) {
+        }
     }
 
-    private void showCopiesOptions() {
-        LinearLayout container = vertical();
-        container.setPadding(dp(14), dp(4), dp(14), dp(0));
-        NumberPicker picker = new NumberPicker(this);
-        picker.setMinValue(1);
-        picker.setMaxValue(99);
-        picker.setValue(Math.max(1, Math.min(copies, 99)));
-        styleNumberPickerForSheet(picker);
-        container.addView(picker, new LinearLayout.LayoutParams(-1, dp(132)));
-        oneUIFormDialog("عدد النسخ", "من 1 إلى 99 نسخة", container, () -> {
-            copies = picker.getValue();
-            printPreferences.edit().putInt("copies", copies).apply();
-            renderApp();
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showCopiesOptions() {
+        LinearLayout vertical = vertical();
+        vertical.setPadding(dp(14.0f), dp(4.0f), dp(14.0f), dp(0.0f));
+        final NumberPicker numberPicker = new NumberPicker(this);
+        numberPicker.setMinValue(1);
+        numberPicker.setMaxValue(99);
+        numberPicker.setValue(Math.max(1, Math.min(this.copies, 99)));
+        styleNumberPickerForSheet(numberPicker);
+        vertical.addView(numberPicker, new LinearLayout.LayoutParams(-1, dp(132.0f)));
+        oneUIFormDialog(getString(R.string.text_093), getString(R.string.text_118), vertical, new FormApply() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda29
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.FormApply
+            public final boolean apply() {
+                boolean lambda$showCopiesOptions$37;
+                lambda$showCopiesOptions$37 = MainActivity.this.lambda$showCopiesOptions$37(numberPicker);
+                return lambda$showCopiesOptions$37;
+            }
         });
     }
 
-    private void showPageRangeOptions() {
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ boolean lambda$showCopiesOptions$37(NumberPicker numberPicker) {
+        this.copies = numberPicker.getValue();
+        this.printPreferences.edit().putInt("copies", this.copies).apply();
+        renderApp();
+        return true;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showPageRangeOptions() {
+        DocumentRenderer documentRenderer = this.documentRenderer;
         if (documentRenderer == null || !documentRenderer.isSupported()) {
-            systemToast("اختر مستندًا قابلاً للمعاينة أولاً.", Toast.LENGTH_SHORT).show();
+            systemToast(getString(R.string.text_119), 0).show();
             return;
         }
-        LinearLayout box = vertical();
-        box.setPadding(dp(14), dp(0), dp(14), dp(0));
-        // The range example stays LTR inside the RTL sentence: without bidi
-        // isolates the numbers and dashes scatter across the line (his device).
-        TextView help = label("استخدم كل الصفحات أو اكتب نطاقًا مثل \u20661-3,5,8-10\u2069. تبدأ أرقام الصفحات من 1.",
-                12, textSecondary(), false);
-        help.setLineSpacing(dp(3), 1f);
-        box.addView(help, margin(4, 0, 4, 10));
-        EditText input = new EditText(this);
-        input.setSingleLine(true);
-        input.setTextSize(15);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-        input.setHint("اتركه فارغًا لكل الصفحات");
-        input.setHintTextColor(textSecondary());
-        input.setTextColor(textPrimary());
-        input.setBackground(flat(darkMode ? 0xFF313339 : 0xFFF0F0F4, 14));
-        input.setPadding(dp(14), 0, dp(14), 0);
-        input.setText("all".equalsIgnoreCase(pageRange) ? "" : pageRange);
-        input.setSelection(input.getText().length());
-        box.addView(input, new LinearLayout.LayoutParams(-1, dp(52)));
-        TextView useAll = label("استخدام كل الصفحات", 13.5f, darkMode ? 0xFF4C9AFF : 0xFF0072DE, true);
-        useAll.setPadding(dp(4), dp(10), dp(4), dp(2));
-        box.addView(useAll, new LinearLayout.LayoutParams(-2, -2));
-        final android.app.Dialog[] holder = new android.app.Dialog[1];
-        Runnable apply = () -> {
-            String requested = input.getText().toString().trim();
-            if (requested.isEmpty()) requested = "all";
-            // Same acceptance rules as before the restyle: "all" or the raw
-            // range with whitespace stripped; the renderer parses it downstream.
-            pageRange = requested.equalsIgnoreCase("all") ? "all" : requested.replaceAll("\\s+", "");
-            printPreferences.edit().putString("page_range", pageRange).apply();
+        LinearLayout vertical = vertical();
+        vertical.setPadding(dp(14.0f), dp(0.0f), dp(14.0f), dp(0.0f));
+        TextView label = label(getString(R.string.text_120), 12.0f, textSecondary(), false);
+        label.setLineSpacing(dp(3.0f), 1.0f);
+        vertical.addView(label, margin(4, 0, 4, 10));
+        final EditText editText = new EditText(this);
+        editText.setSingleLine(true);
+        editText.setTextSize(15.0f);
+        editText.setInputType(524289);
+        editText.setHint(getString(R.string.text_121));
+        editText.setHintTextColor(textSecondary());
+        editText.setTextColor(textPrimary());
+        editText.setBackground(flat(this.darkMode ? -13552839 : -986892, 14));
+        editText.setPadding(dp(14.0f), 0, dp(14.0f), 0);
+        editText.setText("all".equalsIgnoreCase(this.pageRange) ? "" : this.pageRange);
+        editText.setSelection(editText.getText().length());
+        vertical.addView(editText, new LinearLayout.LayoutParams(-1, dp(52.0f)));
+        TextView label2 = label(getString(R.string.text_122), 13.5f, this.darkMode ? -11756801 : -16747810, true);
+        label2.setPadding(dp(4.0f), dp(10.0f), dp(4.0f), dp(2.0f));
+        vertical.addView(label2, new LinearLayout.LayoutParams(-2, -2));
+        final Dialog[] dialogArr = {oneUIFormDialog(getString(R.string.text_123), null, vertical, new FormApply() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda27
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.FormApply
+            public final boolean apply() {
+                boolean lambda$showPageRangeOptions$38;
+                lambda$showPageRangeOptions$38 = MainActivity.this.lambda$showPageRangeOptions$38(editText);
+                return lambda$showPageRangeOptions$38;
+            }
+        })};
+        label2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda28
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$showPageRangeOptions$39(dialogArr, view);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ boolean lambda$showPageRangeOptions$38(EditText editText) {
+        String trim = editText.getText().toString().trim();
+        if (trim.isEmpty()) {
+            trim = "all";
+        }
+        try {
+            resolvePageRange(trim, this.documentRenderer.getPageCount());
+            this.pageRange = trim.equalsIgnoreCase("all") ? "all" : trim.replaceAll("\\s+", "");
+            this.printPreferences.edit().putString("page_range", this.pageRange).apply();
             renderApp();
-        };
-        holder[0] = oneUIFormDialog("الصفحات المطلوب طباعتها", null, box, apply);
-        useAll.setOnClickListener(v -> {
-            performTapFeedback(v);
-            pageRange = "all";
-            printPreferences.edit().putString("page_range", pageRange).apply();
-            holder[0].dismiss();
-            renderApp();
+            return true;
+        } catch (IllegalArgumentException e) {
+            systemToast(e.getMessage(), 1).show();
+            return false;
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showPageRangeOptions$39(Dialog[] dialogArr, View view) {
+        performTapFeedback(view);
+        this.pageRange = "all";
+        this.printPreferences.edit().putString("page_range", this.pageRange).apply();
+        dialogArr[0].dismiss();
+        renderApp();
+    }
+
+    private ArrayList<Integer> resolvePageRange(String str, int i) {
+        if (i < 1) {
+            throw new IllegalArgumentException(getString(R.string.text_124));
+        }
+        ArrayList<Integer> arrayList = new ArrayList<>();
+        if (str != null && !str.trim().isEmpty() && !"all".equalsIgnoreCase(str.trim())) {
+            for (String part : str.split(",", -1)) {
+                String trim = part.trim();
+                if (trim.isEmpty()) {
+                    throw new IllegalArgumentException(getString(R.string.text_125));
+                }
+                int indexOf = trim.indexOf(45);
+                int parseInt;
+                int i2;
+                try {
+                    if (indexOf < 0) {
+                        parseInt = Integer.parseInt(trim);
+                        i2 = parseInt;
+                    } else {
+                        int i5 = indexOf + 1;
+                        if (trim.indexOf(45, i5) >= 0) {
+                            throw new NumberFormatException();
+                        }
+                        parseInt = Integer.parseInt(trim.substring(0, indexOf).trim());
+                        i2 = Integer.parseInt(trim.substring(i5).trim());
+                    }
+                } catch (NumberFormatException unused) {
+                    throw new IllegalArgumentException(getString(R.string.text_126));
+                }
+                if (parseInt < 1 || i2 < parseInt || i2 > i) {
+                    throw new IllegalArgumentException(getString(R.string.text_127) + i + ".");
+                }
+                while (parseInt <= i2) {
+                    Integer valueOf = Integer.valueOf(parseInt - 1);
+                    if (!arrayList.contains(valueOf)) {
+                        arrayList.add(valueOf);
+                    }
+                    parseInt++;
+                }
+            }
+            if (arrayList.isEmpty()) {
+                throw new IllegalArgumentException(getString(R.string.text_128));
+            }
+            return arrayList;
+        }
+        for (int k = 0; k < i; k++) {
+            arrayList.add(Integer.valueOf(k));
+        }
+        return arrayList;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showDuplexOptions() {
+        showSelectionDialog(getString(R.string.text_097), new String[]{getString(R.string.text_129), getString(R.string.text_130), getString(R.string.text_131)}, "manual-long".equals(this.duplexMode) ? 1 : "manual-short".equals(this.duplexMode) ? 2 : 0, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda89
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i) {
+                MainActivity.this.lambda$showDuplexOptions$40(i);
+            }
         });
     }
 
-    private void showDuplexOptions() {
-        String[] options = {
-                "على وجه واحد",
-                "يدويًا · قلب على الحافة الطويلة",
-                "يدويًا · قلب على الحافة القصيرة"
-        };
-        int selected = "manual-long".equals(duplexMode) ? 1 : "manual-short".equals(duplexMode) ? 2 : 0;
-        showSelectionDialog("الطباعة على الوجهين", options, selected, which -> {
-            duplexMode = which == 1 ? "manual-long" : which == 2 ? "manual-short" : "off";
-            printPreferences.edit().putString("duplex_mode", duplexMode).apply();
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showDuplexOptions$40(int i) {
+        String str;
+        if (i == 1) {
+            str = "manual-long";
+        } else {
+            str = i == 2 ? "manual-short" : DebugKt.DEBUG_PROPERTY_VALUE_OFF;
+        }
+        this.duplexMode = str;
+        this.printPreferences.edit().putString("duplex_mode", this.duplexMode).apply();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showQualityOptions() {
+        showSelectionDialog(getString(R.string.text_101), new String[]{getString(R.string.text_132), getString(R.string.text_133), getString(R.string.text_108)}, this.draftMode ? 0 : this.printDensity >= 4 ? 2 : 1, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda118
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i) {
+                MainActivity.this.lambda$showQualityOptions$41(i);
+            }
         });
     }
 
-    private void showOrientationOptions() {
-        String[] options = {"عمودي", "أفقي"};
-        int selected = "landscape".equals(pageOrientation) ? 1 : 0;
-        showSelectionDialog("اتجاه الصفحة", options, selected, which -> {
-            pageOrientation = which == 1 ? "landscape" : "portrait";
-            printPreferences.edit().putString("orientation", pageOrientation).apply();
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showQualityOptions$41(int i) {
+        this.draftMode = i == 0;
+        this.printDensity = i == 0 ? 2 : i == 1 ? 3 : 5;
+        this.printPreferences.edit().putBoolean("draft_mode", this.draftMode).putInt("density", this.printDensity).apply();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showThemeOptions() {
+        showSelectionDialog(getString(R.string.text_134), new String[]{getString(R.string.text_031), getString(R.string.text_030), getString(R.string.text_029)}, "light".equals(this.themeMode) ? 1 : "dark".equals(this.themeMode) ? 2 : 0, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda38
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i) {
+                MainActivity.this.lambda$showThemeOptions$42(i);
+            }
         });
     }
 
-    private void showScaleOptions() {
-        String[] options = {"ملاءمة الصفحة القابلة للطباعة", "ملء الصفحة"};
-        showSelectionDialog("القياس", options, fitToPage ? 0 : 1, which -> {
-            fitToPage = which == 0;
-            printPreferences.edit().putBoolean("fit_to_page", fitToPage).apply();
-        });
-    }
-
-    private void showQualityOptions() {
-        String[] options = {"مسودة · توفير الحبر", "جودة قياسية", "كثافة عالية"};
-        int selected = draftMode ? 0 : printDensity >= 4 ? 2 : 1;
-        showSelectionDialog("جودة الطباعة", options, selected, which -> {
-            draftMode = which == 0;
-            printDensity = which == 0 ? 2 : which == 1 ? 3 : 5;
-            printPreferences.edit().putBoolean("draft_mode", draftMode)
-                    .putInt("density", printDensity).apply();
-        });
-    }
-
-    private void showThemeOptions() {
-        String[] options = {"حسب النظام", "فاتح", "داكن"};
-        int selected = "light".equals(themeMode) ? 1 : "dark".equals(themeMode) ? 2 : 0;
-        showSelectionDialog("المظهر", options, selected, which -> {
-            themeMode = which == 1 ? "light" : which == 2 ? "dark" : "system";
-            uiPreferences.edit().putString("theme_mode", themeMode).apply();
-            applyThemeMode();
-            renderApp();
-        });
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showThemeOptions$42(int i) {
+        String str;
+        if (i == 1) {
+            str = "light";
+        } else {
+            str = i == 2 ? "dark" : "system";
+        }
+        this.themeMode = str;
+        this.uiPreferences.edit().putString("theme_mode", this.themeMode).apply();
+        applyThemeMode();
+        renderApp();
     }
 
     private void openSelectedFileExternally() {
-        if (selectedDocumentUri == null) return;
-        try {
-            Intent view = new Intent(Intent.ACTION_VIEW);
-            view.setDataAndType(selectedDocumentUri,
-                    selectedDocumentMime == null || selectedDocumentMime.isEmpty() ? "*/*" : selectedDocumentMime);
-            view.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(Intent.createChooser(view, "فتح المستند بواسطة"));
-        } catch (Exception e) {
-            systemToast("لم يُعثر على تطبيق متوافق. صدّر هذا الملف كملف PDF.", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private void buildSetupPage(LinearLayout content) {
-        pageAppBar(content, "إعداد الطابعة");
-        boolean connected = hasPrinterConnected();
-
-        LinearLayout hero = card();
-        LinearLayout heroRow = horizontal();
-        heroRow.setGravity(Gravity.CENTER_VERTICAL);
-        LinearLayout htext = vertical();
-        htext.addView(label("HP LaserJet P1005", 16.5f, textPrimary(), true));
-        htext.addView(label(connected ? "متصلة عبر USB · تحتاج تهيئة بعد كل تشغيل"
-                : "غير متصلة · وصّل الطابعة بمحوّل USB OTG", 12, textSecondary(), false),
-                margin(0, 3, 0, 0));
-        heroRow.addView(htext, new LinearLayout.LayoutParams(0, -2, 1f));
-        ImageView photo = new ImageView(this);
-        photo.setImageResource(R.drawable.p1005_photo);
-        photo.setAdjustViewBounds(true);
-        photo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        photo.setContentDescription("طابعة HP LaserJet P1005");
-        LinearLayout.LayoutParams photoParams = new LinearLayout.LayoutParams(dp(118), dp(104));
-        photoParams.setMargins(0, 0, dp(14), 0);
-        heroRow.addView(photo, photoParams);
-        hero.addView(heroRow);
-        content.addView(hero, margin(0, 0, 0, 16));
-
-        if (setupDone) {
-            LinearLayout success = vertical();
-            success.setGravity(Gravity.CENTER_HORIZONTAL);
-            success.setPadding(dp(20), dp(26), dp(20), dp(20));
-            success.setBackground(flat(okBg(), 26));
-            TextView check = label("✓", 30, Color.WHITE, true);
-            check.setGravity(Gravity.CENTER);
-            check.setBackground(flat(okText(), 30));
-            success.addView(check, new LinearLayout.LayoutParams(dp(60), dp(60)));
-            success.addView(label("تم بنجاح تعريف الطابعة", 18, darkMode ? textPrimary() : 0xFF0E5A34, true),
-                    margin(0, 16, 0, 6));
-            TextView sub = label("اكتملت التهيئة وتم التحقق من البرنامج الثابت.\nطابعتك جاهزة للطباعة.",
-                    12.5f, darkMode ? textSecondary() : 0xFF1F6B43, false);
-            sub.setGravity(Gravity.CENTER);
-            sub.setLineSpacing(dp(3), 1f);
-            success.addView(sub);
-            content.addView(success, margin(0, 0, 0, 14));
-
-            LinearLayout steps = card();
-            steps.setPadding(dp(16), dp(8), dp(16), dp(8));
-            addSetupResultRow(steps, "تهيئة الطابعة", "اكتملت");
-            addSeparator(steps);
-            addSetupResultRow(steps, "التحقق من السوفتوير", "الإصدار مثبّت ومقروء من الطابعة");
-            addSeparator(steps);
-            LinearLayout testRow = horizontal();
-            testRow.setPadding(0, dp(12), 0, dp(12));
-            LinearLayout testLabels = vertical();
-            testLabels.addView(label("طباعة صفحة تجريبية", 14, textPrimary(), true), margin(0, 0, 0, 4));
-            testLabels.addView(label("خطوة اختيارية للتأكد من خروج الورق فعليًا", 11.5f, textSecondary(), false));
-            testRow.addView(testLabels, new LinearLayout.LayoutParams(0, -2, 1f));
-            TextView testLink = label("طباعة", 13, tonalText(), true);
-            testLink.setPadding(dp(10), dp(8), 0, dp(8));
-            testLink.setOnClickListener(v -> { performTapFeedback(v); printBuiltInTestPage(); });
-            testRow.addView(testLink);
-            steps.addView(testRow);
-            content.addView(steps, margin(0, 0, 0, 14));
-
-            Button home = bigPrimaryButton("العودة إلى الواجهة الرئيسية");
-            home.setOnClickListener(v -> { performTapFeedback(v); openPage("home"); });
-            content.addView(home, new LinearLayout.LayoutParams(-1, dp(56)));
+        String str;
+        if (this.selectedDocumentUri == null) {
             return;
         }
-
-        if (setupFinishedWithWarning) {
-            LinearLayout warning = vertical();
-            warning.setGravity(Gravity.CENTER_HORIZONTAL);
-            warning.setPadding(dp(20), dp(20), dp(20), dp(18));
-            warning.setBackground(flat(warnBg(), 26));
-            warning.addView(label("تعذّر تأكيد التعريف", 17, warnText(), true), margin(0, 0, 0, 6));
-            TextView sub = label("أُرسلت بيانات البرنامج الثابت، لكن الطابعة لم تُرجع إصدارًا مؤكدًا. قبول USB للبيانات لا يثبت نجاح التحميل؛ لا تُكرر الرفع كثيرًا.",
-                    12, textSecondary(), false);
-            sub.setGravity(Gravity.CENTER);
-            sub.setLineSpacing(dp(3), 1f);
-            warning.addView(sub, margin(0, 0, 0, 0));
-            content.addView(warning, margin(0, 0, 0, 14));
+        try {
+            Intent intent = new Intent("android.intent.action.VIEW");
+            Uri uri = this.selectedDocumentUri;
+            String str2 = this.selectedDocumentMime;
+            str = (str2 == null || str2.isEmpty()) ? "*/*" : str2;
+            intent.setDataAndType(uri, str);
+            intent.addFlags(1);
+            startActivity(Intent.createChooser(intent, getString(R.string.text_135)));
+        } catch (Exception unused) {
+            systemToast(getString(R.string.text_136), 1).show();
         }
-
-        content.addView(sectionLabel("خطوات التهيئة"), margin(2, 0, 0, 8));
-        LinearLayout steps = card();
-        steps.setPadding(dp(14), dp(8), dp(14), dp(8));
-        addSetupStepRow(steps, 0, "1", "تهيئة الطابعة", "تحميل البرنامج الثابت إلى ذاكرة الطابعة");
-        addSeparator(steps);
-        addSetupStepRow(steps, 1, "2", "التحقق من السوفتوير", "قراءة إصدار البرنامج الثابت من الطابعة للتأكد");
-        addSeparator(steps);
-        addSetupStepRow(steps, 2, "3", "طباعة صفحة تجريبية", "تأكد أن الصفحة تخرج من الطابعة فعليًا");
-        content.addView(steps, margin(0, 0, 0, 16));
-
-        Button start = bigPrimaryButton(setupRunning ? "جارٍ التهيئة…" : "تهيئة الطابعة الآن");
-        start.setEnabled(!setupRunning);
-        start.setAlpha(setupRunning ? 0.6f : 1f);
-        start.setOnClickListener(v -> { performTapFeedback(v); startSetupFlow(); });
-        content.addView(start, new LinearLayout.LayoutParams(-1, dp(56)));
     }
 
-    private void addSetupStepRow(LinearLayout parent, int stepIndex, String number,
-                                 String title, String desc) {
-        LinearLayout row = horizontal();
-        row.setPadding(dp(2), dp(11), dp(2), dp(11));
-        int state = setupSteps[stepIndex];
-        TextView badge;
-        if (state == 2) {
-            badge = label("✓", 15, Color.WHITE, true);
-            badge.setBackground(flat(okText(), 18));
-        } else if (state == 1) {
-            badge = label("…", 15, tonalText(), true);
-            badge.setBackground(flat(tonalBg(), 18));
-        } else if (state == 3 || state == 4) {
-            badge = label("!", 15, Color.WHITE, true);
-            badge.setBackground(flat(state == 3 ? warnText() : 0xFFC24040, 18));
+    private void buildSetupPage(LinearLayout linearLayout) {
+        String string;
+        float f;
+        pageAppBar(linearLayout, getString(R.string.text_049));
+        boolean hasPrinterConnected = hasPrinterConnected();
+        LinearLayout card = card();
+        LinearLayout horizontal = horizontal();
+        horizontal.setGravity(16);
+        LinearLayout vertical = vertical();
+        vertical.addView(label("HP LaserJet P1005", 16.5f, textPrimary(), true));
+        if (hasPrinterConnected) {
+            string = getString(R.string.text_137);
         } else {
-            badge = label(number, 13, tonalText(), true);
-            badge.setBackground(flat(tonalBg(), 18));
+            string = getString(R.string.text_138);
         }
-        badge.setGravity(Gravity.CENTER);
-        row.addView(badge, new LinearLayout.LayoutParams(dp(36), dp(36)));
-        LinearLayout labels = vertical();
-        labels.setPadding(dp(12), 0, dp(4), 0);
-        labels.addView(label(title, 14, textPrimary(), true), margin(0, 0, 0, 3));
-        TextView detail = label(desc, 11.5f, textSecondary(), false);
-        detail.setLineSpacing(dp(2), 1f);
-        labels.addView(detail);
-        row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1f));
-        if (state == 1) row.addView(label("جارٍ…", 11.5f, tonalText(), true));
-        else if (state == 2) row.addView(label("اكتملت", 11.5f, okText(), true));
-        else if (state == 3) row.addView(label("غير مؤكد", 11.5f, warnText(), true));
-        else if (state == 4) row.addView(label("تعذّر", 11.5f, 0xFFC24040, true));
-        parent.addView(row, new LinearLayout.LayoutParams(-1, -2));
+        vertical.addView(label(string, 12.0f, textSecondary(), false), margin(0, 3, 0, 0));
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        ImageView imageView = new ImageView(this);
+        imageView.setImageResource(R.drawable.p1005_photo);
+        imageView.setAdjustViewBounds(true);
+        imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        imageView.setContentDescription(getString(R.string.text_043));
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(dp(118.0f), dp(104.0f));
+        layoutParams.setMargins(0, 0, dp(14.0f), 0);
+        horizontal.addView(imageView, layoutParams);
+        card.addView(horizontal);
+        linearLayout.addView(card, margin(0, 0, 0, 16));
+        if (this.setupDone) {
+            LinearLayout vertical2 = vertical();
+            vertical2.setGravity(1);
+            vertical2.setPadding(dp(20.0f), dp(26.0f), dp(20.0f), dp(20.0f));
+            vertical2.setBackground(flat(okBg(), 26));
+            TextView label = label("✓", 30.0f, -1, true);
+            label.setGravity(17);
+            label.setBackground(flat(okText(), 30));
+            vertical2.addView(label, new LinearLayout.LayoutParams(dp(60.0f), dp(60.0f)));
+            vertical2.addView(label(getString(R.string.text_139), 18.0f, this.darkMode ? textPrimary() : -15836620, true), margin(0, 16, 0, 6));
+            TextView label2 = label(getString(R.string.text_140), 12.5f, this.darkMode ? textSecondary() : -14718141, false);
+            label2.setGravity(17);
+            label2.setLineSpacing(dp(3.0f), 1.0f);
+            vertical2.addView(label2);
+            linearLayout.addView(vertical2, margin(0, 0, 0, 14));
+            LinearLayout card2 = card();
+            card2.setPadding(dp(16.0f), dp(8.0f), dp(16.0f), dp(8.0f));
+            addSetupResultRow(card2, getString(R.string.text_141), getString(R.string.text_142));
+            addSeparator(card2);
+            addSetupResultRow(card2, getString(R.string.text_143), getString(R.string.text_144));
+            addSeparator(card2);
+            LinearLayout horizontal2 = horizontal();
+            horizontal2.setPadding(0, dp(12.0f), 0, dp(12.0f));
+            LinearLayout vertical3 = vertical();
+            vertical3.addView(label(getString(R.string.text_145), 14.0f, textPrimary(), true), margin(0, 0, 0, 4));
+            vertical3.addView(label(getString(R.string.text_146), 11.5f, textSecondary(), false));
+            horizontal2.addView(vertical3, new LinearLayout.LayoutParams(0, -2, 1.0f));
+            TextView label3 = label(getString(R.string.text_036), 13.0f, tonalText(), true);
+            label3.setPadding(dp(10.0f), dp(8.0f), 0, dp(8.0f));
+            label3.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda94
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$buildSetupPage$43(view);
+                }
+            });
+            horizontal2.addView(label3);
+            card2.addView(horizontal2);
+            linearLayout.addView(card2, margin(0, 0, 0, 14));
+            Button bigPrimaryButton = bigPrimaryButton(getString(R.string.text_147));
+            bigPrimaryButton.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda95
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$buildSetupPage$44(view);
+                }
+            });
+            linearLayout.addView(bigPrimaryButton, new LinearLayout.LayoutParams(-1, dp(56.0f)));
+            return;
+        }
+        if (this.setupFinishedWithWarning) {
+            LinearLayout vertical4 = vertical();
+            vertical4.setGravity(1);
+            vertical4.setPadding(dp(20.0f), dp(20.0f), dp(20.0f), dp(18.0f));
+            vertical4.setBackground(flat(warnBg(), 26));
+            vertical4.addView(label(getString(R.string.text_148), 17.0f, warnText(), true), margin(0, 0, 0, 6));
+            TextView label4 = label(getString(R.string.text_149), 12.0f, textSecondary(), false);
+            label4.setGravity(17);
+            f = 1.0f;
+            label4.setLineSpacing(dp(3.0f), 1.0f);
+            vertical4.addView(label4, margin(0, 0, 0, 0));
+            linearLayout.addView(vertical4, margin(0, 0, 0, 14));
+        } else {
+            f = 1.0f;
+        }
+        linearLayout.addView(sectionLabel(getString(R.string.text_150)), margin(2, 0, 0, 8));
+        LinearLayout card3 = card();
+        card3.setPadding(dp(14.0f), dp(8.0f), dp(14.0f), dp(8.0f));
+        addSetupStepRow(card3, 0, "1", getString(R.string.text_141), getString(R.string.text_151));
+        addSeparator(card3);
+        addSetupStepRow(card3, 1, "2", getString(R.string.text_143), getString(R.string.text_152));
+        addSeparator(card3);
+        addSetupStepRow(card3, 2, "3", getString(R.string.text_145), getString(R.string.text_153));
+        linearLayout.addView(card3, margin(0, 0, 0, 16));
+        Button bigPrimaryButton2 = bigPrimaryButton(getString(this.setupRunning ? R.string.text_154 : R.string.text_155));
+        bigPrimaryButton2.setEnabled(!this.setupRunning);
+        if (this.setupRunning) {
+            f = 0.6f;
+        }
+        bigPrimaryButton2.setAlpha(f);
+        bigPrimaryButton2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda96
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildSetupPage$45(view);
+            }
+        });
+        linearLayout.addView(bigPrimaryButton2, new LinearLayout.LayoutParams(-1, dp(56.0f)));
     }
 
-    private void addSetupResultRow(LinearLayout parent, String title, String result) {
-        LinearLayout row = horizontal();
-        row.setPadding(dp(2), dp(12), dp(2), dp(12));
-        TextView check = label("✓", 13, Color.WHITE, true);
-        check.setGravity(Gravity.CENTER);
-        check.setBackground(flat(okText(), 16));
-        row.addView(check, new LinearLayout.LayoutParams(dp(32), dp(32)));
-        LinearLayout labels = vertical();
-        labels.setPadding(dp(12), 0, dp(4), 0);
-        labels.addView(label(title, 14, textPrimary(), true));
-        row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1f));
-        row.addView(label(result, 11.5f, okText(), true));
-        parent.addView(row, new LinearLayout.LayoutParams(-1, -2));
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSetupPage$43(View view) {
+        performTapFeedback(view);
+        printBuiltInTestPage();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSetupPage$44(View view) {
+        performTapFeedback(view);
+        openPage("home");
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSetupPage$45(View view) {
+        performTapFeedback(view);
+        startSetupFlow();
+    }
+
+    private void addSetupStepRow(LinearLayout linearLayout, int i, String str, String str2, String str3) {
+        TextView label;
+        LinearLayout horizontal = horizontal();
+        horizontal.setPadding(dp(2.0f), dp(11.0f), dp(2.0f), dp(11.0f));
+        int i2 = this.setupSteps[i];
+        if (i2 == 2) {
+            label = label("✓", 15.0f, -1, true);
+            label.setBackground(flat(okText(), 18));
+        } else if (i2 == 1) {
+            label = label("…", 15.0f, tonalText(), true);
+            label.setBackground(flat(tonalBg(), 18));
+        } else if (i2 == 3 || i2 == 4) {
+            label = label("!", 15.0f, -1, true);
+            label.setBackground(flat(i2 == 3 ? warnText() : -4046784, 18));
+        } else {
+            label = label(str, 13.0f, tonalText(), true);
+            label.setBackground(flat(tonalBg(), 18));
+        }
+        label.setGravity(17);
+        horizontal.addView(label, new LinearLayout.LayoutParams(dp(36.0f), dp(36.0f)));
+        LinearLayout vertical = vertical();
+        vertical.setPadding(dp(12.0f), 0, dp(4.0f), 0);
+        vertical.addView(label(str2, 14.0f, textPrimary(), true), margin(0, 0, 0, 3));
+        TextView label2 = label(str3, 11.5f, textSecondary(), false);
+        label2.setLineSpacing(dp(2.0f), 1.0f);
+        vertical.addView(label2);
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        if (i2 == 1) {
+            horizontal.addView(label(getString(R.string.text_156), 11.5f, tonalText(), true));
+        } else if (i2 == 2) {
+            horizontal.addView(label(getString(R.string.text_142), 11.5f, okText(), true));
+        } else if (i2 == 3) {
+            horizontal.addView(label(getString(R.string.text_157), 11.5f, warnText(), true));
+        } else if (i2 == 4) {
+            horizontal.addView(label(getString(R.string.text_158), 11.5f, -4046784, true));
+        }
+        linearLayout.addView(horizontal, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    private void addSetupResultRow(LinearLayout linearLayout, String str, String str2) {
+        LinearLayout horizontal = horizontal();
+        horizontal.setPadding(dp(2.0f), dp(12.0f), dp(2.0f), dp(12.0f));
+        TextView label = label("✓", 13.0f, -1, true);
+        label.setGravity(17);
+        label.setBackground(flat(okText(), 16));
+        horizontal.addView(label, new LinearLayout.LayoutParams(dp(32.0f), dp(32.0f)));
+        LinearLayout vertical = vertical();
+        vertical.setPadding(dp(12.0f), 0, dp(4.0f), 0);
+        vertical.addView(label(str, 14.0f, textPrimary(), true));
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        horizontal.addView(label(str2, 11.5f, okText(), true));
+        linearLayout.addView(horizontal, new LinearLayout.LayoutParams(-1, -2));
     }
 
     private void startSetupFlow() {
-        if (setupRunning) return;
-        UsbDevice printer = findConnectedPrinter();
-        if (printer == null) {
-            append("توقّفت التهيئة: لم يُعثر على طابعة HP P1005 متصلة عبر USB.");
-            systemToast("صِل الطابعة عبر USB OTG أولاً.", Toast.LENGTH_LONG).show();
+        if (this.setupRunning) {
             return;
         }
-        if (!usbManager.hasPermission(printer)) {
-            append("توقّفت التهيئة: إذن USB غير ممنوح بعد.");
-            systemToast("امنح إذن USB من نافذة النظام ثم أعد المحاولة.", Toast.LENGTH_LONG).show();
+        UsbDevice findConnectedPrinter = findConnectedPrinter();
+        if (findConnectedPrinter == null) {
+            lambda$append$117(getString(R.string.text_159));
+            systemToast(getString(R.string.text_160), 1).show();
+            return;
+        }
+        if (!this.usbManager.hasPermission(findConnectedPrinter)) {
+            lambda$append$117(getString(R.string.text_161));
+            systemToast(getString(R.string.text_162), 1).show();
             scanDevices();
             return;
         }
-        setupRunning = true;
-        setupDone = false;
-        setupFinishedWithWarning = false;
-        setupSteps[0] = 1;
-        setupSteps[1] = 0;
-        setupSteps[2] = 0;
+        this.setupRunning = true;
+        this.setupDone = false;
+        this.setupFinishedWithWarning = false;
+        int[] iArr = this.setupSteps;
+        iArr[0] = 1;
+        iArr[1] = 0;
+        iArr[2] = 0;
         renderApp();
-        append("بدأت تهيئة الطابعة: إرسال البرنامج الثابت المدمج.");
-        loadBuiltInFirmware((firmwareOk, firmwareDetail) -> {
-            if (!firmwareOk) {
-                setupSteps[0] = 4;
-                setupRunning = false;
-                setupFinishedWithWarning = true;
-                append("فشلت تهيئة الطابعة أثناء إرسال البرنامج الثابت: " + firmwareDetail);
-                renderApp();
-                return;
+        lambda$append$117(getString(R.string.text_163));
+        loadBuiltInFirmware(new UsbResultCallback() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda50
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.UsbResultCallback
+            public final void onResult(boolean z, String str) {
+                MainActivity.this.lambda$startSetupFlow$47(z, str);
             }
-            setupSteps[0] = 2;
-            setupSteps[1] = 1;
-            renderApp();
-            verifyPrinterFirmware((firmwareVerified, verifyDetail) -> {
-                setupSteps[1] = firmwareVerified ? 2 : 3;
-                setupRunning = false;
-                if (firmwareVerified) {
-                    setupDone = true;
-                    setupFinishedWithWarning = false;
-                    append("تم التحقق من البرنامج الثابت في جلسة التشغيل الحالية.");
-                } else {
-                    setupFinishedWithWarning = true;
-                    append("اكتمل إرسال البرنامج الثابت لكن التحقق كان غير مؤكد: " + verifyDetail);
-                }
-                renderApp();
-            });
         });
     }
 
-    private void buildSettingsPage(LinearLayout content) {
-        pageAppBar(content, "الإعدادات");
-
-        LinearLayout general = card();
-        general.setPadding(dp(16), dp(5), dp(16), dp(5));
-        addOptionRow(general, "اللغة", "العربية", () ->
-                systemToast("العربية هي لغة التطبيق الحالية.", Toast.LENGTH_SHORT).show(), false);
-        addSeparator(general);
-        addOptionRow(general, "المظهر", themeModeLabel(), this::showThemeOptions);
-        LinearLayout labelPrinter = sectionLabel("الطابعة");
-        LinearLayout printer = card();
-        printer.setPadding(dp(16), dp(5), dp(16), dp(5));
-        LinearLayout setupRow = horizontal();
-        setupRow.setPadding(0, dp(13), 0, dp(13));
-        LinearLayout setupLabels = vertical();
-        setupLabels.addView(label("تهيئة الطابعة", 14, textPrimary(), true), margin(0, 0, 0, 4));
-        setupLabels.addView(label("إعداد الطابعة والسوفتوير وصفحة تجريبية", 11.5f, textSecondary(), false));
-        setupRow.addView(setupLabels, new LinearLayout.LayoutParams(0, -2, 1f));
-        ImageView setupChevron = new ImageView(this);
-        setupChevron.setImageResource(R.drawable.ic_chevron_left);
-        setupChevron.setColorFilter(textSecondary(), PorterDuff.Mode.SRC_IN);
-        setupRow.addView(setupChevron, new LinearLayout.LayoutParams(dp(18), dp(18)));
-        setupRow.setClickable(true);
-        setupRow.setFocusable(true);
-        setupRow.setHapticFeedbackEnabled(hapticsEnabled);
-        setupRow.setOnClickListener(v -> { performTapFeedback(v); openPage("setup"); });
-        printer.addView(setupRow);
-        LinearLayout labelDefaults = sectionLabel("تفضيلات الطباعة");
-        LinearLayout defaults = card();
-        defaults.setPadding(dp(16), dp(5), dp(16), dp(5));
-        addOptionRow(defaults, "حجم الورق", paperSize, this::showPaperSizeOptions);
-        addSeparator(defaults);
-        addOptionRow(defaults, "عدد النسخ", copies + " نسخة", this::showCopiesOptions);
-        addSeparator(defaults);
-        addOptionRow(defaults, "الصفحات", pageRangeSummaryAr(), this::showPageRangeOptions);
-        addSeparator(defaults);
-        addOptionRow(defaults, "الطباعة على الوجهين", duplexLabel(), this::showDuplexOptions);
-        addSeparator(defaults);
-        addOptionRow(defaults, "اتجاه الصفحة", orientationLabel(), this::showOrientationOptions);
-        addSeparator(defaults);
-        addOptionRow(defaults, "القياس", scaleLabel(), this::showScaleOptions);
-        addSeparator(defaults);
-        addOptionRow(defaults, "جودة الطباعة", qualityLabel(), this::showQualityOptions);
-        LinearLayout labelBehavior = sectionLabel("السلوك");
-        LinearLayout behavior = card();
-        behavior.setPadding(dp(16), dp(5), dp(16), dp(5));
-        addSettingToggle(behavior, "ردود الفعل اللمسية", "تفعيل استجابة اللمس في عناصر التحكم.",
-                hapticsEnabled, enabled -> {
-                    hapticsEnabled = enabled;
-                    uiPreferences.edit().putBoolean("haptics", enabled).apply();
-                    renderApp();
-                });
-        addSeparator(behavior);
-        addSettingToggle(behavior, "إبقاء الشاشة نشطة", "منع الشاشة من السكون أثناء فتح التطبيق.",
-                keepScreenAwake, enabled -> {
-                    keepScreenAwake = enabled;
-                    uiPreferences.edit().putBoolean("keep_awake", enabled).apply();
-                    renderApp();
-                });
-        addSeparator(behavior);
-        addSettingToggle(behavior, "تأكيد تحميل البرنامج الثابت", "إظهار تأكيد أمان قبل إرسال بيانات البرنامج الثابت.",
-                confirmFirmwareLoad, enabled -> {
-                    confirmFirmwareLoad = enabled;
-                    uiPreferences.edit().putBoolean("confirm_firmware", enabled).apply();
-                    renderApp();
-                });
-        LinearLayout labelTools = sectionLabel("صيانة الطابعة");
-        LinearLayout tools = card();
-        tools.setPadding(dp(16), dp(6), dp(16), dp(6));
-        addToolRow(tools, "التحقق من البرنامج الثابت", "قراءة معرّف جهاز USB والبحث عن FWVER", "فحص",
-                this::verifyPrinterFirmware);
-        addSeparator(tools);
-        addToolRow(tools, "تحميل البرنامج الثابت المدمج", "يُستخدم بعد تشغيل الطابعة عند الحاجة", "تحميل",
-                this::requestFirmwareLoad);
-        addSeparator(tools);
-        addToolRow(tools, "اختيار ملف برنامج ثابت", "اختيار ملف .dl للفحص دون نقله", "فتح",
-                this::selectFirmwareFile);
-        // tools card assembled below
-
-        TextView firmwareNote = label("مهم: قبول USB لبيانات البرنامج الثابت لا يثبت وحده أن الطابعة حمّلته بنجاح. تجنّب تكرار الرفع إذا كانت الحالة غير مؤكدة.",
-                11.5f, textSecondary(), false);
-        firmwareNote.setLineSpacing(dp(4), 1f);
-        LinearLayout labelAbout = sectionLabel("حول");
-        LinearLayout about = card();
-        about.setPadding(dp(16), dp(5), dp(16), dp(5));
-        addOptionRow(about, "سجل التشخيص", "USB والطباعة", () -> openPage("activity"));
-        addSeparator(about);
-        addOptionRow(about, "المساعدة واستكشاف الأخطاء", "", () -> openPage("help"));
-        addSeparator(about);
-        addOptionRow(about, "عن التطبيق", "", () -> openPage("about"));
-        TextView credit = label("brought to you by Instinct", 11.5f, textSecondary(), false);
-        credit.setGravity(Gravity.CENTER);
-
-        if (!wideLayout()) {
-            content.addView(general, margin(0, 0, 0, 14));
-            content.addView(labelPrinter, margin(2, 0, 0, 8));
-            content.addView(printer, margin(0, 0, 0, 14));
-            content.addView(labelDefaults, margin(2, 0, 0, 8));
-            content.addView(defaults, margin(0, 0, 0, 14));
-            content.addView(labelBehavior, margin(2, 0, 0, 8));
-            content.addView(behavior, margin(0, 0, 0, 14));
-            content.addView(labelTools, margin(2, 0, 0, 9));
-            content.addView(tools, margin(0, 0, 0, 8));
-            content.addView(firmwareNote, margin(3, 2, 3, 14));
-            content.addView(labelAbout, margin(2, 0, 0, 8));
-            content.addView(about, margin(0, 0, 0, 18));
-            content.addView(credit, margin(0, 4, 0, 10));
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$startSetupFlow$47(boolean z, String str) {
+        if (!z) {
+            this.setupSteps[0] = 4;
+            this.setupRunning = false;
+            this.setupFinishedWithWarning = true;
+            lambda$append$117(getString(R.string.text_164) + str);
+            renderApp();
             return;
         }
-        // Tablet: two balanced columns instead of one stretched phone list
-        // (his tablet direction: real use of the big screen, coherent layout).
-        // Right column = general + print defaults; left = printer setup +
-        // behavior + maintenance. حول stays full-width beneath the pair.
-        LinearLayout colA = vertical();
-        colA.addView(general, margin(0, 0, 0, 14));
-        colA.addView(labelDefaults, margin(2, 0, 0, 8));
-        colA.addView(defaults, margin(0, 0, 0, 14));
-        LinearLayout colB = vertical();
-        colB.addView(labelPrinter, margin(2, 0, 0, 8));
-        colB.addView(printer, margin(0, 0, 0, 14));
-        colB.addView(labelBehavior, margin(2, 0, 0, 8));
-        colB.addView(behavior, margin(0, 0, 0, 14));
-        colB.addView(labelTools, margin(2, 0, 0, 9));
-        colB.addView(tools, margin(0, 0, 0, 8));
-        colB.addView(firmwareNote, margin(3, 2, 3, 14));
-        addPair(content, colA, colB);
-        content.addView(labelAbout, margin(2, 0, 0, 8));
-        content.addView(about, margin(0, 0, 0, 18));
-        content.addView(credit, margin(0, 4, 0, 10));
-    }
-
-    private void addSettingToggle(LinearLayout parent, String title, String subtitle,
-                                  boolean enabled, ToggleAction action) {
-        LinearLayout row = horizontal();
-        row.setPadding(0, dp(12), 0, dp(12));
-        LinearLayout labels = vertical();
-        labels.addView(label(title, 14, textPrimary(), true), margin(0, 0, 0, 4));
-        TextView detail = label(subtitle, 11, textSecondary(), false);
-        detail.setLineSpacing(dp(3), 1f);
-        labels.addView(detail);
-        row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1f));
-
-        row.addView(oneUiSwitch(enabled), new LinearLayout.LayoutParams(dp(52), dp(31)));
-        row.setClickable(true);
-        row.setFocusable(true);
-        row.setHapticFeedbackEnabled(hapticsEnabled);
-        row.setOnClickListener(v -> {
-            performTapFeedback(v);
-            action.onToggle(!enabled);
-        });
-        parent.addView(row, new LinearLayout.LayoutParams(-1, -2));
-    }
-
-    // One UI style switch (reviewed proposal): track 52x31dp, knob at the start
-    // side when off and the end side when on; blue checked track in both modes.
-    private FrameLayout oneUiSwitch(boolean enabled) {
-        FrameLayout track = new FrameLayout(this);
-        track.setBackground(flat(enabled ? 0xFF0072DE : (darkMode ? 0xFF3A3A3F : 0xFFD9D9DE), 16));
-        View knob = new View(this);
-        knob.setBackground(flat(enabled ? Color.WHITE : (darkMode ? 0xFF8E8E96 : Color.WHITE), 13));
-        FrameLayout.LayoutParams knobParams = new FrameLayout.LayoutParams(dp(25), dp(25),
-                (enabled ? Gravity.END : Gravity.START) | Gravity.CENTER_VERTICAL);
-        knobParams.setMargins(dp(3), 0, dp(3), 0);
-        track.addView(knob, knobParams);
-        return track;
-    }
-
-    private void buildAboutPage(LinearLayout content) {
-        pageAppBar(content, "عن التطبيق");
-
-        LinearLayout identity = card();
-        identity.setGravity(Gravity.CENTER_HORIZONTAL);
-        identity.setPadding(dp(20), dp(24), dp(20), dp(18));
-        ImageView mark = new ImageView(this);
-        mark.setImageResource(R.mipmap.ic_launcher);
-        mark.setContentDescription("أيقونة التطبيق");
-        identity.addView(mark, new LinearLayout.LayoutParams(dp(64), dp(64)));
-        identity.addView(label("HP P1005", 20, textPrimary(), true), margin(0, 12, 0, 4));
-        identity.addView(label("رفيق الطباعة عبر USB", 12, textSecondary(), false), margin(0, 0, 0, 14));
-        identity.addView(label("الإصدار", 10.5f, eyebrowColor(), true), margin(0, 0, 0, 3));
-        identity.addView(label(readAppVersion(), 14, textPrimary(), true), margin(0, 0, 0, 12));
-        identity.addView(label("معرّف التطبيق", 10.5f, eyebrowColor(), true), margin(0, 0, 0, 3));
-        identity.addView(label("com.hpp1005.printer", 12.5f, textSecondary(), false));
-        content.addView(identity, margin(0, 0, 0, 14));
-
-        LinearLayout features = card();
-        features.addView(label("ماذا يفعل هذا الإصدار", 16, textPrimary(), true), margin(0, 0, 0, 10));
-        addBullet(features, "يكتشف طابعة HP P1005 عبر USB ويطلب إذن أندرويد.");
-        addBullet(features, "يقرأ معرّف جهاز USB للتحقق من إصدار البرنامج الثابت.");
-        addBullet(features, "يعاين ملفات PDF والصور الشائعة ويحوّلها إلى تدفق XQX الخاص بالطابعة.");
-        addBullet(features, "يستورد النص من ملفات نصية وOffice وOpenDocument؛ التنسيقات المعقدة تُصدَّر كـ PDF.");
-        addBullet(features, "يوفّر خيارات حجم الورق ونطاق الصفحات والنسخ المرتبة والاتجاه والقياس والجودة والطباعة اليدوية على الوجهين.");
-        addBullet(features, "يرسل البرنامج الثابت المدمج وصفحة اختبار XQX من صفحة واحدة.");
-        addBullet(features, "يسجّل نتائج عمليات USB في سجل التشخيص.");
-        content.addView(features, margin(0, 0, 0, 14));
-
-        LinearLayout limitations = card();
-        limitations.addView(label("القيود الحالية", 16, textPrimary(), true), margin(0, 0, 0, 8));
-        TextView body = label("تحتفظ ملفات PDF والصور الشائعة بإخراجها. تُستورَد النصوص وعدد من تنسيقات Office وOpenDocument كتخطيط نصي لا بدقة Office الكاملة؛ لمستندات Word وExcel وPowerPoint المعقدة، صدّرها كملف PDF. اختيار ملف برنامج ثابت يسجّل الاختيار فقط ولا ينقله. قبول USB لبيانات البرنامج الثابت لا يضمن نجاح تحميله.",
-                12, textSecondary(), false);
-        body.setLineSpacing(dp(4), 1f);
-        limitations.addView(body);
-        content.addView(limitations, margin(0, 0, 0, 18));
-
-        TextView credit = label("brought to you by Instinct", 11.5f, textSecondary(), false);
-        credit.setGravity(Gravity.CENTER);
-        content.addView(credit, margin(0, 4, 0, 10));
-    }
-
-    private void addBullet(LinearLayout parent, String text) {
-        LinearLayout row = horizontal();
-        row.setGravity(Gravity.TOP);
-        TextView dot = label("•", 16, primaryColor(), true);
-        row.addView(dot, new LinearLayout.LayoutParams(dp(16), -2));
-        TextView body = label(text, 12, textSecondary(), false);
-        body.setLineSpacing(dp(3), 1f);
-        row.addView(body, new LinearLayout.LayoutParams(0, -2, 1f));
-        parent.addView(row, margin(0, 0, 0, 8));
-    }
-
-    private void buildHelpPage(LinearLayout content) {
-        pageAppBar(content, "المساعدة واستكشاف الأخطاء");
-
-        LinearLayout help = card();
-        help.setPadding(dp(16), dp(8), dp(16), dp(8));
-        addHelpItem(help, "1", "وصّل الطابعة",
-                "شغّل P1005 واستخدم محوّل USB OTG يدعم نقل البيانات. كابلات الشحن فقط لا تعمل.");
-        addSeparator(help);
-        addHelpItem(help, "2", "امنح إذن USB",
-                "افحص أجهزة USB من صفحة الطباعة ووافق على طلب إذن أندرويد إن ظهر.");
-        addSeparator(help);
-        addHelpItem(help, "3", "تحقق من معرّف الجهاز",
-                "استخدم التحقق من البرنامج الثابت لقراءة معرّف جهاز USB. وجود حقل FWVER دليل على حالة البرنامج الثابت، لكنه ليس اختبار طباعة.");
-        addSeparator(help);
-        addHelpItem(help, "4", "تصفّح وعاين ثم اطبع",
-                "من صفحة طباعة اختر ملفًا، راجع معاينة الصفحات، ثم اضبط الورق والنسخ والنطاق والاتجاه والقياس والجودة والطباعة على الوجهين قبل الضغط على طباعة. تُعرض ملفات PDF والصور مباشرة؛ ملفات Office المعقدة يُفضّل تصديرها كـ PDF.");
-        addSeparator(help);
-        addHelpItem(help, "5", "اطبع صفحة تجريبية",
-                "استخدم الصفحة التجريبية المدمجة وانتظر انتهاء نقل USB. تأكد من خروج الورق فعليًا من الطابعة.");
-        addSeparator(help);
-        addHelpItem(help, "6", "حمّل البرنامج الثابت عند الحاجة فقط",
-                "قد يلزم إعادة تحميل البرنامج الثابت بعد كل دورة تشغيل للطابعة. لا تُرسله بشكل متكرر إذا كانت الحالة غير مؤكدة.");
-        content.addView(help, margin(0, 0, 0, 15));
-
-        Button scan = tonalButton("فحص أجهزة USB", 14.5f);
-        scan.setMinHeight(dp(48));
-        scan.setOnClickListener(v -> { scanDevices(); renderApp(); });
-        content.addView(scan, new LinearLayout.LayoutParams(-1, dp(48)));
-        Button print = tonalButton("طباعة الصفحة التجريبية", 14.5f);
-        print.setMinHeight(dp(48));
-        print.setOnClickListener(v -> { performTapFeedback(v); printBuiltInTestPage(); });
-        content.addView(print, margin(0, 10, 0, 8));
-    }
-
-    private void addHelpItem(LinearLayout parent, String number, String title, String detail) {
-        LinearLayout row = horizontal();
-        row.setGravity(Gravity.TOP);
-        row.setPadding(dp(2), dp(11), dp(2), dp(11));
-        TextView badge = label(number, 12, tonalText(), true);
-        badge.setGravity(Gravity.CENTER);
-        badge.setBackground(flat(tonalBg(), 18));
-        row.addView(badge, new LinearLayout.LayoutParams(dp(36), dp(36)));
-        LinearLayout labels = vertical();
-        labels.setPaddingRelative(dp(11), 0, 0, 0);
-        labels.addView(label(title, 14, textPrimary(), true), margin(0, 0, 0, 4));
-        TextView d = label(detail, 12, textSecondary(), false);
-        d.setLineSpacing(dp(3), 1f);
-        labels.addView(d);
-        row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1f));
-        parent.addView(row, new LinearLayout.LayoutParams(-1, -2));
-    }
-
-    private void buildActivityPage(LinearLayout content) {
-        pageAppBar(content, "سجل التشخيص");
-
-        LinearLayout actions = horizontal();
-        Button copy = tonalButton("نسخ السجل", 13f);
-        copy.setMinHeight(dp(44));
-        copy.setOnClickListener(v -> copyActivityLog());
-        actions.addView(copy, new LinearLayout.LayoutParams(0, dp(44), 1f));
-        Button clear = tonalButton("مسح", 13f);
-        clear.setMinHeight(dp(44));
-        clear.setOnClickListener(v -> {
-            clearActivityLog();
-            systemToast("مُسح سجل النشاط", Toast.LENGTH_SHORT).show();
-        });
-        LinearLayout.LayoutParams clearParams = new LinearLayout.LayoutParams(0, dp(44), 1f);
-        clearParams.setMarginStart(dp(9));
-        actions.addView(clear, clearParams);
-        content.addView(actions, margin(0, 0, 0, 13));
-
-        LinearLayout logCard = card();
-        LinearLayout logTop = horizontal();
-        logTop.addView(label("مخرجات الجلسة", 11, eyebrowColor(), true),
-                new LinearLayout.LayoutParams(0, -2, 1f));
-        logTop.addView(statusPill(hasPrinterConnected()));
-        logCard.addView(logTop, margin(0, 0, 0, 13));
-        output = label(activityLog.toString(), 12, textPrimary(), false);
-        output.setTextIsSelectable(true);
-        output.setTypeface(Typeface.create("monospace", Typeface.NORMAL));
-        output.setLineSpacing(dp(4), 1f);
-        logCard.addView(output, new LinearLayout.LayoutParams(-1, -2));
-        content.addView(logCard, margin(0, 0, 0, 16));
-
-        Button scan = bigPrimaryButton("فحص أجهزة USB");
-        scan.setOnClickListener(v -> { scanDevices(); renderApp(); });
-        content.addView(scan, new LinearLayout.LayoutParams(-1, dp(52)));
-    }
-
-    private void openDocumentPicker(boolean imagesOnly) {
-        try {
-            Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            picker.setType(imagesOnly ? "image/*" : "*/*");
-            picker.addCategory(Intent.CATEGORY_OPENABLE);
-            picker.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, false);
-            if (!imagesOnly) {
-                picker.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
-                        "application/pdf", "image/*",
-                        "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                        "application/rtf", "text/plain", "text/csv", "text/html",
-                        "application/vnd.oasis.opendocument.text", "application/vnd.oasis.opendocument.spreadsheet",
-                        "application/vnd.oasis.opendocument.presentation"
-                });
+        int[] iArr = this.setupSteps;
+        iArr[0] = 2;
+        iArr[1] = 1;
+        renderApp();
+        verifyPrinterFirmware(new UsbResultCallback() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda17
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.UsbResultCallback
+            public final void onResult(boolean z2, String str2) {
+                MainActivity.this.lambda$startSetupFlow$46(z2, str2);
             }
-            startActivityForResult(picker, REQUEST_DOCUMENT);
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$startSetupFlow$46(boolean z, String str) {
+        this.setupSteps[1] = z ? 2 : 3;
+        this.setupRunning = false;
+        if (z) {
+            this.setupDone = true;
+            this.setupFinishedWithWarning = false;
+            lambda$append$117(getString(R.string.text_165));
+        } else {
+            this.setupFinishedWithWarning = true;
+            lambda$append$117(getString(R.string.text_166) + str);
+        }
+        renderApp();
+    }
+
+    private void buildSettingsPage(LinearLayout linearLayout) {
+        pageAppBar(linearLayout, getString(R.string.text_039));
+        LinearLayout card = card();
+        card.setPadding(dp(16.0f), dp(5.0f), dp(16.0f), dp(5.0f));
+        addOptionRow(card, getString(R.string.text_167), getString(isArabic() ? R.string.language_arabic : R.string.language_english), new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda99
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.showLanguageOptions();
+            }
+        });
+        addSeparator(card);
+        addOptionRow(card, getString(R.string.text_134), themeModeLabel(), new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda108
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.showThemeOptions();
+            }
+        });
+        View sectionLabel = sectionLabel(getString(R.string.text_170));
+        LinearLayout card2 = card();
+        card2.setPadding(dp(16.0f), dp(5.0f), dp(16.0f), dp(5.0f));
+        LinearLayout horizontal = horizontal();
+        horizontal.setPadding(0, dp(13.0f), 0, dp(13.0f));
+        LinearLayout vertical = vertical();
+        vertical.addView(label(getString(R.string.text_141), 16.0f, textPrimary(), true), margin(0, 0, 0, 4));
+        vertical.addView(label(getString(R.string.text_171), 13.0f, textSecondary(), false));
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        ImageView imageView = new ImageView(this);
+        imageView.setImageResource(R.drawable.ic_chevron_left);
+        imageView.setScaleX(isArabic() ? 1.0f : -1.0f);
+        imageView.setColorFilter(textSecondary(), PorterDuff.Mode.SRC_IN);
+        horizontal.addView(imageView, new LinearLayout.LayoutParams(dp(18.0f), dp(18.0f)));
+        horizontal.setClickable(true);
+        horizontal.setFocusable(true);
+        horizontal.setHapticFeedbackEnabled(this.hapticsEnabled);
+        horizontal.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda110
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildSettingsPage$48(view);
+            }
+        });
+        card2.addView(horizontal);
+        View sectionLabel2 = sectionLabel(getString(R.string.text_172));
+        LinearLayout card3 = card();
+        card3.setPadding(dp(16.0f), dp(5.0f), dp(16.0f), dp(5.0f));
+        addOptionRow(card3, getString(R.string.text_092), this.paperSize, new MainActivity$$ExternalSyntheticLambda111(this));
+        addSeparator(card3);
+        String string = getString(R.string.text_093);
+        Resources resources = getResources();
+        int i = R.plurals.copy_count;
+        int i2 = this.copies;
+        addOptionRow(card3, string, resources.getQuantityString(i, i2, Integer.valueOf(i2)), new MainActivity$$ExternalSyntheticLambda112(this));
+        addSeparator(card3);
+        addOptionRow(card3, getString(R.string.text_096), pageRangeSummaryAr(), new MainActivity$$ExternalSyntheticLambda113(this));
+        addSeparator(card3);
+        addOptionRow(card3, getString(R.string.text_097), duplexLabel(), new MainActivity$$ExternalSyntheticLambda114(this));
+        addSeparator(card3);
+        addOptionRow(card3, getString(R.string.text_100), layoutSummary(), new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda115
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$buildSettingsPage$49();
+            }
+        });
+        addSeparator(card3);
+        addOptionRow(card3, getString(R.string.text_101), qualityLabel(), new MainActivity$$ExternalSyntheticLambda116(this));
+        View sectionLabel3 = sectionLabel(getString(R.string.text_174));
+        LinearLayout card4 = card();
+        card4.setPadding(dp(16.0f), dp(5.0f), dp(16.0f), dp(5.0f));
+        addSettingToggle(card4, getString(R.string.text_175), getString(R.string.text_176), this.hapticsEnabled, new ToggleAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda117
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.ToggleAction
+            public final void onToggle(boolean z) {
+                MainActivity.this.lambda$buildSettingsPage$50(z);
+            }
+        });
+        addSeparator(card4);
+        addSettingToggle(card4, getString(R.string.text_177), getString(R.string.text_178), this.keepScreenAwake, new ToggleAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda100
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.ToggleAction
+            public final void onToggle(boolean z) {
+                MainActivity.this.lambda$buildSettingsPage$51(z);
+            }
+        });
+        addSeparator(card4);
+        addSettingToggle(card4, getString(R.string.text_179), getString(R.string.text_180), this.confirmFirmwareLoad, new ToggleAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda101
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.ToggleAction
+            public final void onToggle(boolean z) {
+                MainActivity.this.lambda$buildSettingsPage$52(z);
+            }
+        });
+        View sectionLabel4 = sectionLabel(getString(R.string.text_064));
+        LinearLayout card5 = card();
+        card5.setPadding(dp(16.0f), dp(6.0f), dp(16.0f), dp(6.0f));
+        addToolRow(card5, getString(R.string.text_181), getString(R.string.text_182), getString(R.string.text_183), new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda102
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.verifyPrinterFirmware();
+            }
+        });
+        addSeparator(card5);
+        addToolRow(card5, getString(R.string.text_184), getString(R.string.text_185), getString(R.string.text_186), new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda103
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.requestFirmwareLoad();
+            }
+        });
+        addSeparator(card5);
+        addToolRow(card5, getString(R.string.text_187), getString(R.string.text_188), getString(R.string.text_189), new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda104
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.selectFirmwareFile();
+            }
+        });
+        TextView label = label(getString(R.string.text_190), 13.0f, textSecondary(), false);
+        label.setLineSpacing(dp(4.0f), 1.0f);
+        View sectionLabel5 = sectionLabel(getString(R.string.text_191));
+        LinearLayout card6 = card();
+        card6.setPadding(dp(16.0f), dp(5.0f), dp(16.0f), dp(5.0f));
+        addOptionRow(card6, getString(R.string.text_192), getString(R.string.text_193), new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda105
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$buildSettingsPage$53();
+            }
+        });
+        addSeparator(card6);
+        addOptionRow(card6, getString(R.string.text_194), "", new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda106
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$buildSettingsPage$54();
+            }
+        });
+        addSeparator(card6);
+        addOptionRow(card6, getString(R.string.text_040), "", new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda107
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$buildSettingsPage$55();
+            }
+        });
+        TextView label2 = label("brought to you by Instinct", 13.0f, textSecondary(), false);
+        label2.setGravity(17);
+        if (!wideLayout()) {
+            linearLayout.addView(card, margin(0, 0, 0, 14));
+            linearLayout.addView(sectionLabel, margin(2, 0, 0, 8));
+            linearLayout.addView(card2, margin(0, 0, 0, 14));
+            linearLayout.addView(sectionLabel2, margin(2, 0, 0, 8));
+            linearLayout.addView(card3, margin(0, 0, 0, 14));
+            linearLayout.addView(sectionLabel3, margin(2, 0, 0, 8));
+            linearLayout.addView(card4, margin(0, 0, 0, 14));
+            linearLayout.addView(sectionLabel4, margin(2, 0, 0, 9));
+            linearLayout.addView(card5, margin(0, 0, 0, 8));
+            linearLayout.addView(label, margin(3, 2, 3, 14));
+            linearLayout.addView(sectionLabel5, margin(2, 0, 0, 8));
+            linearLayout.addView(card6, margin(0, 0, 0, 18));
+            linearLayout.addView(label2, margin(0, 4, 0, 10));
+            return;
+        }
+        LinearLayout vertical2 = vertical();
+        vertical2.addView(card, margin(0, 0, 0, 14));
+        vertical2.addView(sectionLabel2, margin(2, 0, 0, 8));
+        vertical2.addView(card3, margin(0, 0, 0, 14));
+        LinearLayout vertical3 = vertical();
+        vertical3.addView(sectionLabel, margin(2, 0, 0, 8));
+        vertical3.addView(card2, margin(0, 0, 0, 14));
+        vertical3.addView(sectionLabel3, margin(2, 0, 0, 8));
+        vertical3.addView(card4, margin(0, 0, 0, 14));
+        vertical3.addView(sectionLabel4, margin(2, 0, 0, 9));
+        vertical3.addView(card5, margin(0, 0, 0, 8));
+        vertical3.addView(label, margin(3, 2, 3, 14));
+        addPair(linearLayout, vertical2, vertical3);
+        linearLayout.addView(sectionLabel5, margin(2, 0, 0, 8));
+        linearLayout.addView(card6, margin(0, 0, 0, 18));
+        linearLayout.addView(label2, margin(0, 4, 0, 10));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSettingsPage$48(View view) {
+        performTapFeedback(view);
+        openPage("setup");
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSettingsPage$49() {
+        openPage("layout");
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSettingsPage$50(boolean z) {
+        this.hapticsEnabled = z;
+        this.uiPreferences.edit().putBoolean("haptics", z).apply();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSettingsPage$51(boolean z) {
+        this.keepScreenAwake = z;
+        this.uiPreferences.edit().putBoolean("keep_awake", z).apply();
+        if (z) {
+            getWindow().addFlags(128);
+        } else {
+            getWindow().clearFlags(128);
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSettingsPage$52(boolean z) {
+        this.confirmFirmwareLoad = z;
+        this.uiPreferences.edit().putBoolean("confirm_firmware", z).apply();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSettingsPage$53() {
+        openPage("activity");
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSettingsPage$54() {
+        openPage("help");
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSettingsPage$55() {
+        openPage("about");
+    }
+
+    private void addSettingToggle(LinearLayout linearLayout, String str, String str2, boolean z, final ToggleAction toggleAction) {
+        LinearLayout horizontal = horizontal();
+        horizontal.setPadding(0, dp(12.0f), 0, dp(12.0f));
+        LinearLayout vertical = vertical();
+        vertical.addView(label(str, 16.0f, textPrimary(), true), margin(0, 0, 0, 4));
+        TextView label = label(str2, 13.0f, textSecondary(), false);
+        label.setLineSpacing(dp(3.0f), 1.0f);
+        vertical.addView(label);
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        final FrameLayout oneUiSwitch = oneUiSwitch(z);
+        horizontal.addView(oneUiSwitch, new LinearLayout.LayoutParams(dp(52.0f), dp(31.0f)));
+        horizontal.setClickable(true);
+        horizontal.setFocusable(true);
+        horizontal.setHapticFeedbackEnabled(this.hapticsEnabled);
+        final boolean[] zArr = {z};
+        horizontal.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda66
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$addSettingToggle$56(zArr, oneUiSwitch, toggleAction, view);
+            }
+        });
+        linearLayout.addView(horizontal, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$addSettingToggle$56(boolean[] zArr, FrameLayout frameLayout, ToggleAction toggleAction, View view) {
+        performTapFeedback(view);
+        boolean z = !zArr[0];
+        zArr[0] = z;
+        updateOneUiSwitch(frameLayout, z);
+        toggleAction.onToggle(zArr[0]);
+    }
+
+    private void updateOneUiSwitch(FrameLayout frameLayout, boolean z) {
+        int i;
+        final View childAt = frameLayout.getChildAt(0);
+        final int left = childAt.getLeft();
+        if (z) {
+            i = -16747810;
+        } else {
+            i = this.darkMode ? -12961217 : -2500130;
+        }
+        frameLayout.setBackground(flat(i, 16));
+        int i2 = -1;
+        if (!z && this.darkMode) {
+            i2 = -7434602;
+        }
+        childAt.setBackground(flat(i2, 13));
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) childAt.getLayoutParams();
+        layoutParams.gravity = (z ? GravityCompat.END : GravityCompat.START) | 16;
+        childAt.setLayoutParams(layoutParams);
+        frameLayout.post(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda51
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$updateOneUiSwitch$57(left, childAt);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$updateOneUiSwitch$57(int i, View view) {
+        float left = i - view.getLeft();
+        if (left == 0.0f || reducedMotion()) {
+            return;
+        }
+        view.setTranslationX(left);
+        view.animate().translationX(0.0f).setDuration(140L).setInterpolator(oneUiEase()).start();
+    }
+
+    private FrameLayout oneUiSwitch(boolean z) {
+        int i;
+        FrameLayout frameLayout = new FrameLayout(this);
+        if (z) {
+            i = -16747810;
+        } else {
+            i = this.darkMode ? -12961217 : -2500130;
+        }
+        frameLayout.setBackground(flat(i, 16));
+        View view = new View(this);
+        int i2 = -1;
+        if (!z && this.darkMode) {
+            i2 = -7434602;
+        }
+        view.setBackground(flat(i2, 13));
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(dp(25.0f), dp(25.0f), (z ? GravityCompat.END : GravityCompat.START) | 16);
+        layoutParams.setMargins(dp(3.0f), 0, dp(3.0f), 0);
+        frameLayout.addView(view, layoutParams);
+        return frameLayout;
+    }
+
+    private void buildAboutPage(LinearLayout linearLayout) {
+        pageAppBar(linearLayout, getString(R.string.text_040));
+        LinearLayout card = card();
+        card.setGravity(1);
+        card.setPadding(dp(20.0f), dp(24.0f), dp(20.0f), dp(18.0f));
+        ImageView imageView = new ImageView(this);
+        imageView.setImageResource(R.mipmap.ic_launcher);
+        imageView.setContentDescription(getString(R.string.text_195));
+        card.addView(imageView, new LinearLayout.LayoutParams(dp(64.0f), dp(64.0f)));
+        card.addView(label("HP P1005", 20.0f, textPrimary(), true), margin(0, 12, 0, 4));
+        card.addView(label(getString(R.string.text_196), 12.0f, textSecondary(), false), margin(0, 0, 0, 14));
+        card.addView(label(getString(R.string.text_197), 10.5f, eyebrowColor(), true), margin(0, 0, 0, 3));
+        card.addView(label(readAppVersion(), 14.0f, textPrimary(), true), margin(0, 0, 0, 12));
+        card.addView(label(getString(R.string.text_198), 10.5f, eyebrowColor(), true), margin(0, 0, 0, 3));
+        card.addView(label(BuildConfig.APPLICATION_ID, 12.5f, textSecondary(), false));
+        linearLayout.addView(card, margin(0, 0, 0, 14));
+        LinearLayout card2 = card();
+        card2.addView(label(getString(R.string.text_199), 16.0f, textPrimary(), true), margin(0, 0, 0, 10));
+        addBullet(card2, getString(R.string.text_200));
+        addBullet(card2, getString(R.string.text_201));
+        addBullet(card2, getString(R.string.text_202));
+        addBullet(card2, getString(R.string.text_203));
+        addBullet(card2, getString(R.string.text_204));
+        addBullet(card2, getString(R.string.text_205));
+        addBullet(card2, getString(R.string.text_206));
+        linearLayout.addView(card2, margin(0, 0, 0, 14));
+        LinearLayout card3 = card();
+        card3.addView(label(getString(R.string.text_207), 16.0f, textPrimary(), true), margin(0, 0, 0, 8));
+        TextView label = label(getString(R.string.text_208), 12.0f, textSecondary(), false);
+        label.setLineSpacing(dp(4.0f), 1.0f);
+        card3.addView(label);
+        linearLayout.addView(card3, margin(0, 0, 0, 18));
+        TextView label2 = label("brought to you by Instinct", 11.5f, textSecondary(), false);
+        label2.setGravity(17);
+        linearLayout.addView(label2, margin(0, 4, 0, 10));
+    }
+
+    private void addBullet(LinearLayout linearLayout, String str) {
+        LinearLayout horizontal = horizontal();
+        horizontal.setGravity(48);
+        horizontal.addView(label("•", 16.0f, primaryColor(), true), new LinearLayout.LayoutParams(dp(16.0f), -2));
+        TextView label = label(str, 12.0f, textSecondary(), false);
+        label.setLineSpacing(dp(3.0f), 1.0f);
+        horizontal.addView(label, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        linearLayout.addView(horizontal, margin(0, 0, 0, 8));
+    }
+
+    private void buildHelpPage(LinearLayout linearLayout) {
+        pageAppBar(linearLayout, getString(R.string.text_194));
+        LinearLayout card = card();
+        card.setPadding(dp(16.0f), dp(8.0f), dp(16.0f), dp(8.0f));
+        addHelpItem(card, "1", getString(R.string.text_209), getString(R.string.text_210));
+        addSeparator(card);
+        addHelpItem(card, "2", getString(R.string.text_211), getString(R.string.text_212));
+        addSeparator(card);
+        addHelpItem(card, "3", getString(R.string.text_213), getString(R.string.text_214));
+        addSeparator(card);
+        addHelpItem(card, "4", getString(R.string.text_215), getString(R.string.text_216));
+        addSeparator(card);
+        addHelpItem(card, "5", getString(R.string.text_217), getString(R.string.text_218));
+        addSeparator(card);
+        addHelpItem(card, "6", getString(R.string.text_219), getString(R.string.text_220));
+        linearLayout.addView(card, margin(0, 0, 0, 15));
+        Button button = tonalButton(getString(R.string.text_221), 14.5f);
+        button.setMinHeight(dp(48.0f));
+        button.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda64
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildHelpPage$58(view);
+            }
+        });
+        linearLayout.addView(button, new LinearLayout.LayoutParams(-1, dp(48.0f)));
+        Button button2 = tonalButton(getString(R.string.text_063), 14.5f);
+        button2.setMinHeight(dp(48.0f));
+        button2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda65
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildHelpPage$59(view);
+            }
+        });
+        linearLayout.addView(button2, margin(0, 10, 0, 8));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildHelpPage$58(View view) {
+        scanDevices();
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildHelpPage$59(View view) {
+        performTapFeedback(view);
+        printBuiltInTestPage();
+    }
+
+    private void addHelpItem(LinearLayout linearLayout, String str, String str2, String str3) {
+        LinearLayout horizontal = horizontal();
+        horizontal.setGravity(48);
+        horizontal.setPadding(dp(2.0f), dp(11.0f), dp(2.0f), dp(11.0f));
+        TextView label = label(str, 12.0f, tonalText(), true);
+        label.setGravity(17);
+        label.setBackground(flat(tonalBg(), 18));
+        horizontal.addView(label, new LinearLayout.LayoutParams(dp(36.0f), dp(36.0f)));
+        LinearLayout vertical = vertical();
+        vertical.setPaddingRelative(dp(11.0f), 0, 0, 0);
+        vertical.addView(label(str2, 14.0f, textPrimary(), true), margin(0, 0, 0, 4));
+        TextView label2 = label(str3, 12.0f, textSecondary(), false);
+        label2.setLineSpacing(dp(3.0f), 1.0f);
+        vertical.addView(label2);
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        linearLayout.addView(horizontal, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    private void buildActivityPage(LinearLayout linearLayout) {
+        pageAppBar(linearLayout, getString(R.string.text_192));
+        LinearLayout horizontal = horizontal();
+        Button button = tonalButton(getString(R.string.text_222), 13.0f);
+        button.setMinHeight(dp(44.0f));
+        button.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda56
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildActivityPage$60(view);
+            }
+        });
+        horizontal.addView(button, new LinearLayout.LayoutParams(0, dp(44.0f), 1.0f));
+        Button button2 = tonalButton(getString(R.string.text_223), 13.0f);
+        button2.setMinHeight(dp(44.0f));
+        button2.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda57
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildActivityPage$61(view);
+            }
+        });
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, dp(44.0f), 1.0f);
+        layoutParams.setMarginStart(dp(9.0f));
+        horizontal.addView(button2, layoutParams);
+        linearLayout.addView(horizontal, margin(0, 0, 0, 13));
+        LinearLayout card = card();
+        LinearLayout horizontal2 = horizontal();
+        horizontal2.addView(label(getString(R.string.text_225), 11.0f, eyebrowColor(), true), new LinearLayout.LayoutParams(0, -2, 1.0f));
+        horizontal2.addView(statusPill(hasPrinterConnected()));
+        card.addView(horizontal2, margin(0, 0, 0, 13));
+        TextView label = label(this.activityLog.toString(), 12.0f, textPrimary(), false);
+        this.output = label;
+        label.setTextIsSelectable(true);
+        this.output.setTypeface(Typeface.create("monospace", 0));
+        this.output.setLineSpacing(dp(4.0f), 1.0f);
+        card.addView(this.output, new LinearLayout.LayoutParams(-1, -2));
+        linearLayout.addView(card, margin(0, 0, 0, 16));
+        Button bigPrimaryButton = bigPrimaryButton(getString(R.string.text_221));
+        bigPrimaryButton.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda58
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildActivityPage$62(view);
+            }
+        });
+        linearLayout.addView(bigPrimaryButton, new LinearLayout.LayoutParams(-1, dp(52.0f)));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildActivityPage$60(View view) {
+        copyActivityLog();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildActivityPage$61(View view) {
+        clearActivityLog();
+        systemToast(getString(R.string.text_224), 0).show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildActivityPage$62(View view) {
+        scanDevices();
+        renderApp();
+    }
+
+    private void openDocumentPicker(boolean z) {
+        try {
+            Intent intent = new Intent("android.intent.action.OPEN_DOCUMENT");
+            intent.setType(z ? "image/*" : "*/*");
+            intent.addCategory("android.intent.category.OPENABLE");
+            intent.putExtra("android.intent.extra.ALLOW_MULTIPLE", false);
+            if (!z) {
+                intent.putExtra("android.intent.extra.MIME_TYPES", new String[]{"application/pdf", "image/*", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation", "application/rtf", "text/plain", "text/csv", "text/html", "application/vnd.oasis.opendocument.text", "application/vnd.oasis.opendocument.spreadsheet", "application/vnd.oasis.opendocument.presentation"});
+            }
+            startActivityForResult(intent, 42);
         } catch (Exception e) {
-            append("تعذّر فتح منتقي ملفات أندرويد: " + e.getMessage());
-            systemToast("لا يوجد منتقي ملفات متوافق.", Toast.LENGTH_LONG).show();
+            lambda$append$117(getString(R.string.text_226) + e.getMessage());
+            systemToast(getString(R.string.text_227), 1).show();
         }
     }
 
     private void loadSelectedDocument(Uri uri) {
-        if (uri == null) return;
+        if (uri == null) {
+            return;
+        }
         try {
-            try {
-                getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            } catch (Exception ignored) {
-                // Some shared URIs are temporary and cannot be persisted.
+            getContentResolver().takePersistableUriPermission(uri, 1);
+        } catch (Exception unused) {
+        }
+        try {
+            String queryDisplayName = queryDisplayName(uri);
+            String type = getContentResolver().getType(uri);
+            if (type == null || type.trim().isEmpty()) {
+                type = guessMimeFromName(queryDisplayName);
             }
-
-            String name = queryDisplayName(uri);
-            String mime = getContentResolver().getType(uri);
-            if (mime == null || mime.trim().isEmpty()) mime = guessMimeFromName(name);
-            DocumentRenderer candidate = new DocumentRenderer(this, uri, name, mime);
-
-            if (documentRenderer != null) documentRenderer.close();
-            selectedDocumentUri = uri;
-            selectedDocumentName = name;
-            selectedDocumentMime = mime == null ? "" : mime;
-            documentRenderer = candidate;
-            currentPreviewPage = 0;
-
-            if (currentPreviewBitmap != null && !currentPreviewBitmap.isRecycled()) {
-                currentPreviewBitmap.recycle();
-                currentPreviewBitmap = null;
+            DocumentRenderer documentRenderer = new DocumentRenderer(this, uri, queryDisplayName, type);
+            DocumentRenderer documentRenderer2 = this.documentRenderer;
+            if (documentRenderer2 != null) {
+                documentRenderer2.close();
             }
-
-            if (candidate.isSupported()) {
-                append("المستند جاهز: " + name + " (" + candidate.getFormatLabel()
-                        + "، " + candidate.getPageCount() + " صفحة).");
+            this.selectedDocumentUri = uri;
+            this.selectedDocumentName = queryDisplayName;
+            if (type == null) {
+                type = "";
+            }
+            this.selectedDocumentMime = type;
+            this.documentRenderer = documentRenderer;
+            this.currentPreviewPage = 0;
+            Bitmap bitmap = this.currentPreviewBitmap;
+            if (bitmap != null && !bitmap.isRecycled()) {
+                this.currentPreviewBitmap.recycle();
+                this.currentPreviewBitmap = null;
+            }
+            if (documentRenderer.isSupported()) {
+                lambda$append$117(getString(R.string.text_228) + queryDisplayName + " (" + documentRenderer.getFormatLabel() + getString(R.string.text_229) + documentRenderer.getPageCount() + getString(R.string.text_230));
             } else {
-                append("الملف المختار: " + name + ". المعاينة المباشرة تدعم PDF والصور والنصوص واستخراج نص ملفات Office وOpenDocument. قد يلزم تصدير هذا التنسيق إلى PDF.");
+                lambda$append$117(getString(R.string.text_231) + queryDisplayName + getString(R.string.text_232));
             }
-            currentPage = "preview";
-            renderApp();
+            if (!"preview".equals(this.currentPage)) {
+                saveScrollPosition();
+                this.pageStack.push(this.currentPage);
+                this.scrollPositions.remove("preview");
+            }
+            this.currentPage = "preview";
+            swapToPage("preview", 3);
         } catch (Exception e) {
-            if (debuggable()) android.util.Log.w("HP1005-Share", "document load failed for " + uri, e);
-            else android.util.Log.w("HP1005-Share", "document load failed: " + e.getClass().getSimpleName());
-            append("تعذّر فتح المستند: " + e.getClass().getSimpleName() + ": " + e.getMessage());
-            systemToast("تعذّرت قراءة الملف المختار.", Toast.LENGTH_LONG).show();
+            if (debuggable()) {
+                Log.w("HP1005-Share", "document load failed for " + uri, e);
+            } else {
+                Log.w("HP1005-Share", "document load failed: " + e.getClass().getSimpleName());
+            }
+            lambda$append$117(getString(R.string.text_233) + e.getClass().getSimpleName() + ": " + e.getMessage());
+            systemToast(getString(R.string.text_234), 1).show();
         }
     }
 
     private String queryDisplayName(Uri uri) {
         Cursor cursor = null;
         try {
-            cursor = getContentResolver().query(uri, new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null);
+            cursor = getContentResolver().query(uri, new String[]{"_display_name"}, null, null, null);
             if (cursor != null && cursor.moveToFirst()) {
-                int column = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                if (column >= 0) {
-                    String value = cursor.getString(column);
-                    if (value != null && !value.trim().isEmpty()) return value;
+                int columnIndex = cursor.getColumnIndex("_display_name");
+                if (columnIndex >= 0) {
+                    String string = cursor.getString(columnIndex);
+                    if (string != null && !string.trim().isEmpty()) {
+                        return string;
+                    }
                 }
             }
-        } catch (Exception ignored) {
+        } catch (Exception unused) {
         } finally {
-            if (cursor != null) cursor.close();
+            if (cursor != null) {
+                cursor.close();
+            }
         }
-        String last = uri.getLastPathSegment();
-        return last == null || last.isEmpty() ? "مستند محدد" : last;
+        String lastPathSegment = uri.getLastPathSegment();
+        return (lastPathSegment == null || lastPathSegment.isEmpty()) ? getString(R.string.text_235) : lastPathSegment;
     }
 
-    private String guessMimeFromName(String name) {
-        String ext = DocumentRenderer.extensionOf(name);
-        switch (ext) {
-            case "pdf": return "application/pdf";
-            case "jpg": case "jpeg": return "image/jpeg";
-            case "png": return "image/png";
-            case "webp": return "image/webp";
-            case "gif": return "image/gif";
-            case "bmp": return "image/bmp";
-            case "txt": case "log": case "md": return "text/plain";
-            case "csv": return "text/csv";
-            case "html": case "htm": return "text/html";
-            case "docx": return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-            case "xlsx": return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            case "pptx": return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-            default: return "application/octet-stream";
+    private String guessMimeFromName(String str) {
+        String extensionOf = DocumentRenderer.extensionOf(str);
+        extensionOf.hashCode();
+        switch (extensionOf) {
+            case "md":
+            case "log":
+            case "txt":
+                return "text/plain";
+            case "bmp":
+                return "image/bmp";
+            case "csv":
+                return "text/csv";
+            case "gif":
+                return "image/gif";
+            case "htm":
+            case "html":
+                return "text/html";
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg";
+            case "pdf":
+                return "application/pdf";
+            case "png":
+                return "image/png";
+            case "docx":
+                return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            case "pptx":
+                return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+            case "webp":
+                return "image/webp";
+            case "xlsx":
+                return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            default:
+                return "application/octet-stream";
         }
     }
 
     private void printSelectedDocument() {
-        if (printInProgress) return;
-        if (selectedDocumentUri == null || documentRenderer == null) {
-            systemToast("اختر مستندًا أولاً.", Toast.LENGTH_SHORT).show();
+        DocumentRenderer documentRenderer;
+        String str;
+        String string;
+        if (this.printInProgress) {
+            return;
+        }
+        if (this.selectedDocumentUri == null || (documentRenderer = this.documentRenderer) == null) {
+            systemToast(getString(R.string.text_236), 0).show();
             openDocumentPicker(false);
             return;
         }
         if (!documentRenderer.isSupported()) {
-            showNativeDialog(dialogBuilder()
-                    .setTitle("المعاينة مطلوبة")
-                    .setMessage("تعذّر عرض هذا الملف هنا. افتحه في تطبيق متوافق وصدّره أو شاركه كملف PDF، ثم اطبع ملف PDF من HP P1005.")
-                    .setPositiveButton("فتح في تطبيق آخر", (d, w) -> openSelectedFileExternally())
-                    .setNegativeButton("إلغاء", null)
-                    .create());
+            showNativeDialog(dialogBuilder().setTitle(getString(R.string.text_237)).setMessage(getString(R.string.text_238)).setPositiveButton(getString(R.string.text_091), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda85
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    MainActivity.this.lambda$printSelectedDocument$63(dialogInterface, i);
+                }
+            }).setNegativeButton(getString(R.string.text_111), (DialogInterface.OnClickListener) null).create());
             return;
         }
-
-        final ArrayList<Integer> selectedPages;
         try {
-            selectedPages = resolvePageRange(pageRange, documentRenderer.getPageCount());
+            ArrayList<Integer> resolvePageRange = resolvePageRange(this.pageRange, this.documentRenderer.getPageCount());
+            UsbDevice findConnectedPrinter = findConnectedPrinter();
+            if (findConnectedPrinter == null && !MainDebugHooks.enabled()) {
+                lambda$append$117(getString(R.string.text_239));
+                systemToast(getString(R.string.text_240), 1).show();
+                return;
+            }
+            if (!MainDebugHooks.enabled() && !this.usbManager.hasPermission(findConnectedPrinter)) {
+                lambda$append$117(getString(R.string.text_241));
+                scanDevices();
+                systemToast(getString(R.string.text_242), 1).show();
+                return;
+            }
+            if ("booklet".equals(this.layoutMode)) {
+                final PrintRequest printRequest = new PrintRequest(this);
+                boolean isEmpty = PrintFlow.select(planSheets(resolvePageRange, this.documentRenderer, printRequest.spec, printRequest.paper, printRequest.overlapMm), "booklet-back").isEmpty();
+                if (printRequest.copies <= 1) {
+                    str = "";
+                } else if (!isEmpty) {
+                    str = getString(R.string.text_243) + printRequest.copies + getString(R.string.text_244);
+                } else {
+                    str = getString(R.string.text_243) + printRequest.copies + getString(R.string.text_245);
+                }
+                if (!isEmpty) {
+                    string = getString(R.string.text_246);
+                } else {
+                    string = getString(R.string.text_247);
+                }
+                AlertDialog.Builder title = dialogBuilder().setTitle(getString(R.string.text_248));
+                StringBuilder sb = new StringBuilder();
+                sb.append(getString(R.string.text_249));
+                sb.append(getString(printRequest.spec.binding == SheetComposer.Binding.RIGHT ? R.string.text_250 : R.string.text_251));
+                sb.append(").");
+                sb.append(string);
+                sb.append(str);
+                showNativeDialog(title.setMessage(sb.toString()).setNegativeButton(getString(R.string.text_111), (DialogInterface.OnClickListener) null).setPositiveButton(getString(R.string.text_252), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda86
+                    @Override // android.content.DialogInterface.OnClickListener
+                    public final void onClick(DialogInterface dialogInterface, int i) {
+                        MainActivity.this.lambda$printSelectedDocument$64(printRequest, dialogInterface, i);
+                    }
+                }).create());
+                return;
+            }
+            boolean z = !DebugKt.DEBUG_PROPERTY_VALUE_OFF.equals(this.duplexMode) && planSheets(resolvePageRange, this.documentRenderer).size() > 1;
+            if (z && this.copies > 1) {
+                showNativeDialog(dialogBuilder().setTitle(getString(R.string.text_253)).setMessage(getString(R.string.text_254)).setNegativeButton(getString(R.string.text_111), (DialogInterface.OnClickListener) null).setPositiveButton(getString(R.string.text_255), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda87
+                    @Override // android.content.DialogInterface.OnClickListener
+                    public final void onClick(DialogInterface dialogInterface, int i) {
+                        MainActivity.this.lambda$printSelectedDocument$65(dialogInterface, i);
+                    }
+                }).create());
+            } else if (z) {
+                showNativeDialog(dialogBuilder().setTitle(getString(R.string.text_253)).setMessage(getString(R.string.text_256)).setNegativeButton(getString(R.string.text_111), (DialogInterface.OnClickListener) null).setPositiveButton(getString(R.string.text_257), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda88
+                    @Override // android.content.DialogInterface.OnClickListener
+                    public final void onClick(DialogInterface dialogInterface, int i) {
+                        MainActivity.this.lambda$printSelectedDocument$66(dialogInterface, i);
+                    }
+                }).create());
+            } else {
+                startDocumentPrintPass(false, false);
+            }
         } catch (IllegalArgumentException e) {
-            systemToast(e.getMessage(), Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        UsbDevice printer = findConnectedPrinter();
-        if (printer == null) {
-            append("توقّفت طباعة المستند: جهاز HP P1005 USB غير موجود. صِله وافحص أجهزة USB.");
-            systemToast("صِل طابعة HP P1005 وافحص أجهزة USB أولاً.", Toast.LENGTH_LONG).show();
-            return;
-        }
-        if (!usbManager.hasPermission(printer)) {
-            append("توقّفت طباعة المستند: إذن USB من أندرويد غير ممنوح.");
-            scanDevices();
-            systemToast("امنح إذن USB ثم اضغط طباعة مرة أخرى.", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        boolean hasOddPages = false;
-        boolean hasEvenPages = false;
-        for (int page : selectedPages) {
-            if (((page + 1) & 1) == 1) hasOddPages = true;
-            else hasEvenPages = true;
-        }
-        boolean manualDuplex = !"off".equals(duplexMode) && hasOddPages && hasEvenPages;
-        if (manualDuplex && copies > 1) {
-            AlertDialog dialog = dialogBuilder()
-                    .setTitle("الطباعة اليدوية على الوجهين")
-                    .setMessage("لا تحتوي طابعة HP LaserJet P1005 على وحدة طباعة على الوجهين تلقائية. للحصول على ترتيب صحيح للصفحات، اطبع نسخة واحدة في كل مرة. هل أضبط عدد النسخ على 1 لهذه المهمة؟")
-                    .setNegativeButton("إلغاء", null)
-                    .setPositiveButton("استخدام نسخة واحدة", (d, w) -> {
-                        copies = 1;
-                        printPreferences.edit().putInt("copies", copies).apply();
-                        renderApp();
-                        startDocumentPrintPass(true, false);
-                    })
-                    .create();
-            showNativeDialog(dialog);
-        } else if (manualDuplex) {
-            AlertDialog dialog = dialogBuilder()
-                    .setTitle("الطباعة اليدوية على الوجهين")
-                    .setMessage("تطبع P1005 وجهًا واحدًا في كل مرة. ستُرسَل الصفحات الفردية أولًا. عند المطالبة، اجمع الأوراق المطبوعة وأعد إدخالها لطباعة الوجه الآخر. لن تقلب الطابعة الأوراق تلقائيًا.")
-                    .setNegativeButton("إلغاء", null)
-                    .setPositiveButton("طباعة الصفحات الفردية", (d, w) -> startDocumentPrintPass(true, false))
-                    .create();
-            showNativeDialog(dialog);
-        } else {
-            startDocumentPrintPass(false, false);
+            systemToast(e.getMessage(), 1).show();
         }
     }
 
-    private void startDocumentPrintPass(boolean oddPagesOnly, boolean evenPass) {
-        if (printInProgress || selectedDocumentUri == null) return;
-        printInProgress = true;
-        jobCancelRequested = false;
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$printSelectedDocument$63(DialogInterface dialogInterface, int i) {
+        openSelectedFileExternally();
+    }
 
-        final Uri documentUri = selectedDocumentUri;
-        final String documentName = selectedDocumentName;
-        final String documentMime = selectedDocumentMime;
-        final String requestedPaper = paperSize;
-        final boolean landscape = "landscape".equals(pageOrientation);
-        final String requestedDuplex = duplexMode;
-        final String requestedRange = pageRange;
-        final int requestedCopies = copies;
-        final int density = printDensity;
-        final boolean draft = draftMode;
-        final boolean fit = fitToPage;
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$printSelectedDocument$64(PrintRequest printRequest, DialogInterface dialogInterface, int i) {
+        startPrintPass("booklet-front", 1, printRequest);
+    }
 
-        new Thread(() -> {
-            // Serialize against system print-service jobs: one printer.
-            UsbPrinterIO.JOB_LOCK.lock();
-            try {
-            String error = null;
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$printSelectedDocument$65(DialogInterface dialogInterface, int i) {
+        this.copies = 1;
+        this.printPreferences.edit().putInt("copies", this.copies).apply();
+        renderApp();
+        startDocumentPrintPass(true, false);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$printSelectedDocument$66(DialogInterface dialogInterface, int i) {
+        startDocumentPrintPass(true, false);
+    }
+
+    private void startDocumentPrintPass(boolean z, boolean z2) {
+        String str;
+        if (z) {
+            str = "odd";
+        } else {
+            str = z2 ? "even" : "all";
+        }
+        startPrintPass(str, 1);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    static final class PrintRequest {
+        final int copies;
+        final int density;
+        final boolean draft;
+        final String duplex;
+        final String mime;
+        final String name;
+        final int overlapMm;
+        final String paper;
+        final String range;
+        final int source;
+        final SheetComposer.Spec spec;
+        final Uri uri;
+
+        PrintRequest(MainActivity mainActivity) {
+            this.uri = mainActivity.selectedDocumentUri;
+            this.name = mainActivity.selectedDocumentName;
+            this.mime = mainActivity.selectedDocumentMime;
+            this.paper = mainActivity.paperSize;
+            this.duplex = mainActivity.duplexMode;
+            this.range = mainActivity.pageRange;
+            this.copies = mainActivity.copies;
+            this.density = mainActivity.printDensity;
+            this.draft = mainActivity.draftMode;
+            this.source = mainActivity.resolveSourceCode();
+            this.overlapMm = mainActivity.posterOverlapMm;
+            this.spec = mainActivity.buildSheetSpec(1800);
+        }
+    }
+
+    private void startPrintPass(String str, int i) {
+        if (this.printInProgress || this.selectedDocumentUri == null) {
+            return;
+        }
+        startPrintPass(str, i, new PrintRequest(this));
+    }
+
+    private void startPrintPass(final String str, final int i, final PrintRequest printRequest) {
+        if (this.printInProgress) {
+            return;
+        }
+        this.printInProgress = true;
+        this.jobCancelRequested = false;
+        final Uri uri = printRequest.uri;
+        final String str2 = printRequest.name;
+        final String str3 = printRequest.mime;
+        final String str4 = printRequest.paper;
+        final String str5 = printRequest.duplex;
+        final String str6 = printRequest.range;
+        final int i2 = printRequest.copies;
+        final int i3 = printRequest.density;
+        final boolean z = printRequest.draft;
+        final int i4 = printRequest.source;
+        new Thread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda119
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$startPrintPass$75(uri, str2, str3, str6, printRequest, str, i, i2, str4, str5, i3, z, i4);
+            }
+        }, "P1005-Document-Print").start();
+    }
+
+    /* Rebuilt by hand from bytecode (decompilers could not recover this method). */
+    public /* synthetic */ void lambda$startPrintPass$75(Uri uri, String str, String str2, String str3, final PrintRequest printRequest, final String str4, final int i, final int i2, String str5, String str6, int i3, boolean z, int i4) {
+        UsbPrinterIO.JOB_LOCK.lock();
+        try {
+            boolean hasBackSheets = false;
             boolean cancelled = false;
-            int sentPages = 0;
-            int totalStreams = 0;
-            try (DocumentRenderer renderer = new DocumentRenderer(getApplicationContext(),
-                    documentUri, documentName, documentMime)) {
-                UsbDevice printer = findConnectedPrinter();
-                if (printer == null) throw new IllegalStateException("انقطع اتصال جهاز HP P1005 USB.");
-                if (!usbManager.hasPermission(printer)) throw new IllegalStateException("سُحب إذن USB. افحص الطابعة وحاول مجددًا.");
-                int pageCount = renderer.getPageCount();
-
-                ArrayList<Integer> selection = resolvePageRange(requestedRange, pageCount);
-                ArrayList<Integer> order = new ArrayList<>();
-                if (oddPagesOnly) {
-                    for (int i : selection) if (((i + 1) & 1) == 1) order.add(i);
-                } else if (evenPass) {
-                    for (int n = selection.size() - 1; n >= 0; n--) {
-                        int i = selection.get(n);
-                        if (((i + 1) & 1) == 0) order.add(i);
+            int done = 0;
+            int total = 0;
+            String error = null;
+            try {
+                final DocumentRenderer documentRenderer = new DocumentRenderer(getApplicationContext(), uri, str, str2);
+                try {
+                    UsbDevice findConnectedPrinter = findConnectedPrinter();
+                    if (findConnectedPrinter == null && !MainDebugHooks.enabled()) {
+                        throw new IllegalStateException(getString(R.string.text_258));
                     }
-                } else {
-                    order.addAll(selection);
-                }
-                if (order.isEmpty()) throw new IllegalStateException("نطاق الصفحات المحدد لا يحتوي على صفحات لهذا الوجه.");
-
-                // Process a complete page sequence for each copy to preserve collated output.
-                // The native converter is invoked with one copy per page stream.
-                int copyCount = (oddPagesOnly || evenPass) ? 1 : Math.max(1, requestedCopies);
-                totalStreams = order.size() * copyCount;
-                currentJobName = documentName;
-                currentJobTotal = totalStreams;
-                currentJobDone = 0;
-                runOnUiThread(this::renderApp);
-                for (int copy = 1; copy <= copyCount && !cancelled; copy++) {
-                    for (int orderIndex = 0; orderIndex < order.size(); orderIndex++) {
-                        if (jobCancelRequested) {
-                            cancelled = true;
-                            break;
-                        }
-                        int pageIndex = order.get(orderIndex);
-                        Bitmap bitmap = renderer.renderPage(pageIndex, 1800, 2540);
-                        Bitmap printBitmap = bitmap;
-                        if (landscape) {
-                            printBitmap = Foo2XqxConverter.rotate(bitmap, 90f);
-                            if (printBitmap != bitmap && !bitmap.isRecycled()) bitmap.recycle();
-                        }
-                        Foo2XqxConverter.Result job = null;
-                        try {
-                            boolean rotateBack = evenPass && "manual-long".equals(requestedDuplex);
-                            job = Foo2XqxConverter.convert(getApplicationContext(), printBitmap,
-                                    requestedPaper, landscape, 1, density, draft, fit, rotateBack);
-                            sendXqxFileToPrinter(job.xqxFile, printer);
-                        } finally {
-                            if (job != null && job.xqxFile.exists()) job.xqxFile.delete();
-                            if (printBitmap != null && !printBitmap.isRecycled()) printBitmap.recycle();
-                        }
-                        sentPages++;
-                        final int shownPage = pageIndex + 1;
-                        final int currentCopy = copy;
-                        final int doneNow = sentPages;
-                        final int totalNow = totalStreams;
-                        currentJobDone = sentPages;
-                        runOnUiThread(() -> {
-                            append("أُرسلت الصفحة " + shownPage
-                                    + (copyCount > 1 ? " · نسخة " + currentCopy + "/" + copyCount : "")
-                                    + " (" + doneNow + "/" + totalNow + ").");
-                            if ("queue".equals(currentPage) || "preview".equals(currentPage)) renderApp();
-                        });
+                    if (!MainDebugHooks.enabled() && !this.usbManager.hasPermission(findConnectedPrinter)) {
+                        throw new IllegalStateException(getString(R.string.text_259));
                     }
+                    MainDebugHooks.validatePrinter();
+                    ArrayList<Integer> resolvePageRange = resolvePageRange(str3, documentRenderer.getPageCount());
+                    final SheetComposer.Spec spec = printRequest.spec;
+                    if (MainDebugHooks.enabled()) {
+                        StringBuilder sb = new StringBuilder("request pass=");
+                        sb.append(str4);
+                        sb.append(" copy=");
+                        sb.append(i);
+                        sb.append(" mode=");
+                        sb.append(spec.mode);
+                        sb.append(" binding=");
+                        sb.append(spec.binding);
+                        sb.append(" copies=");
+                        sb.append(i2);
+                        sb.append(" paper=");
+                        sb.append(str5);
+                        sb.append(" range=");
+                        sb.append(str3);
+                        Log.i("HPPrintFlow", sb.toString());
+                    }
+                    ArrayList<SheetJob> planSheets = planSheets(resolvePageRange, documentRenderer, spec, str5, printRequest.overlapMm);
+                    ArrayList select = PrintFlow.select(planSheets, str4);
+                    hasBackSheets = !PrintFlow.select(planSheets, "booklet-back").isEmpty();
+                    boolean reverse = "booklet-back".equals(str4) || ("even".equals(str4) && "manual-long".equals(str6));
+                    if (select.isEmpty()) {
+                        throw new IllegalStateException(getString(R.string.text_260));
+                    }
+                    int passes = "all".equals(str4) ? Math.max(1, i2) : 1;
+                    total = select.size() * passes;
+                    this.currentJobName = str;
+                    this.currentJobTotal = total;
+                    this.currentJobDone = 0;
+                    runOnUiThread(new Runnable() {
+                        @Override // java.lang.Runnable
+                        public final void run() {
+                            MainActivity.this.renderApp();
+                        }
+                    });
+                    final boolean rotatePages = spec.mode == SheetComposer.Mode.SIZE && spec.sheetWidthPx > spec.sheetHeightPx;
+                    SheetComposer.PageSource pageSource = new SheetComposer.PageSource() {
+                        @Override // com.mohamedelnaggar.hpp1005.SheetComposer.PageSource
+                        public Bitmap page(int i8) throws Exception {
+                            Bitmap renderPage = documentRenderer.renderPage(i8, spec.sheetWidthPx, spec.sheetHeightPx);
+                            if (!rotatePages) {
+                                return renderPage;
+                            }
+                            Bitmap rotate = Foo2XqxConverter.rotate(renderPage, 90.0f);
+                            renderPage.recycle();
+                            return rotate;
+                        }
+
+                        @Override // com.mohamedelnaggar.hpp1005.SheetComposer.PageSource
+                        public void release(Bitmap bitmap) {
+                            if (bitmap == null || bitmap.isRecycled()) {
+                                return;
+                            }
+                            bitmap.recycle();
+                        }
+
+                        @Override // com.mohamedelnaggar.hpp1005.SheetComposer.PageSource
+                        public float[] pagePhysicalMm(int i8) {
+                            return documentRenderer.pagePhysicalMm(i8);
+                        }
+                    };
+                    for (int pass = 1; pass <= passes && !cancelled; pass++) {
+                        for (int idx = 0; idx < select.size(); idx++) {
+                            if (this.jobCancelRequested) {
+                                cancelled = true;
+                                break;
+                            }
+                            SheetJob sheetJob = (SheetJob) select.get(idx);
+                            Bitmap composed;
+                            if (sheetJob.posterTile >= 0) {
+                                Bitmap page = pageSource.page(sheetJob.pages[0]);
+                                try {
+                                    composed = SheetComposer.composePosterTile(spec, page, sheetJob.posterTile, sheetJob.posterCols, sheetJob.posterRows, posterBase100(spec, pageSource.pagePhysicalMm(sheetJob.pages[0]), page.getWidth(), page.getHeight()));
+                                } finally {
+                                    pageSource.release(page);
+                                }
+                            } else {
+                                composed = SheetComposer.composeSheet(spec, sheetJob.pages, pageSource);
+                            }
+                            Foo2XqxConverter.Result result = null;
+                            try {
+                                result = Foo2XqxConverter.convert(getApplicationContext(), composed, str5, spec.sheetWidthPx > spec.sheetHeightPx, 1, i3, z, false, reverse, i4);
+                                if (MainDebugHooks.enabled()) {
+                                    MainDebugHooks.saveAndSend(this, composed, result.xqxFile, done + 1);
+                                } else {
+                                    sendXqxFileToPrinter(result.xqxFile, findConnectedPrinter);
+                                }
+                            } finally {
+                                if (result != null && result.xqxFile.exists()) {
+                                    result.xqxFile.delete();
+                                }
+                                if (composed != null && !composed.isRecycled()) {
+                                    composed.recycle();
+                                }
+                            }
+                            done++;
+                            final String label = sheetJob.label;
+                            this.currentJobDone = done;
+                            final int passesF = passes;
+                            final int passF = pass;
+                            final int doneF = done;
+                            final int totalF = total;
+                            runOnUiThread(new Runnable() {
+                                @Override // java.lang.Runnable
+                                public final void run() {
+                                    MainActivity.this.lambda$startPrintPass$67(label, passesF, passF, doneF, totalF);
+                                }
+                            });
+                        }
+                    }
+                } finally {
+                    documentRenderer.close();
                 }
             } catch (Exception e) {
                 error = e.getClass().getSimpleName() + ": " + e.getMessage();
             }
-            final String failure = error;
-            final boolean wasCancelled = cancelled;
-            final int done = sentPages;
-            final int total = totalStreams;
-            runOnUiThread(() -> {
-                printInProgress = false;
-                currentJobName = null;
-                if (wasCancelled) {
-                    append("أُلغيت المهمة بعد إرسال " + done + " من " + total
-                            + " صفحة. الصفحات التي قبلها USB قد تكون خرجت فعليًا من الطابعة.");
-                    systemToast("أُلغيت المهمة. الصفحات المُرسلة لا يمكن سحبها.", Toast.LENGTH_LONG).show();
-                    renderApp();
-                } else if (failure != null) {
-                    append("فشلت طباعة المستند: " + failure);
-                    systemToast("فشلت الطباعة: " + failure, Toast.LENGTH_LONG).show();
-                    renderApp();
-                } else if (oddPagesOnly) {
-                    append("اكتمل إرسال الوجه الفردي. بانتظار إعادة إدخال الورق يدويًا.");
-                    renderApp();
-                    AlertDialog flip = dialogBuilder()
-                            .setTitle("أعد إدخال الورق")
-                            .setMessage("أُرسل الوجه الأول (" + done + " صفحة). اجمع الأوراق المطبوعة مع الحفاظ على ترتيبها وأعد إدخالها في درج الورق. عند القلب على الحافة الطويلة، اقلب الرزمة كالكتاب؛ وعند القلب على الحافة القصيرة، اقلبها فوق الحافة القصيرة. جرّب اتجاه التغذية على صفحة واحدة قبل مهمة كبيرة.")
-                            .setNegativeButton("التوقف هنا", (d, w) ->
-                                    systemToast("طُبع الوجه الأول. لم تكتمل المهمة.", Toast.LENGTH_LONG).show())
-                            .setPositiveButton("طباعة الصفحات الزوجية", (d, w) -> startDocumentPrintPass(false, true))
-                            .create();
-                    showNativeDialog(flip);
-                } else {
-                    append("اكتملت مهمة الطباعة: أُرسلت " + done + " صفحة للطابعة.");
-                    systemToast(evenPass ? "أُرسل الوجه الثاني للطباعة اليدوية." : "أُرسل المستند إلى HP P1005.", Toast.LENGTH_LONG).show();
-                    renderApp();
+            final PrintFlow.Next after = PrintFlow.after(str4, hasBackSheets, i, i2, error == null, cancelled);
+            final boolean cancelledF = cancelled;
+            final int doneF2 = done;
+            final int totalF2 = total;
+            final String errorF = error;
+            runOnUiThread(new Runnable() {
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$startPrintPass$74(cancelledF, doneF2, totalF2, errorF, after, printRequest, i, i2, str4);
                 }
             });
-            } finally { UsbPrinterIO.JOB_LOCK.unlock(); }
-        }, "P1005-Document-Print").start();
+        } finally {
+            UsbPrinterIO.JOB_LOCK.unlock();
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$startPrintPass$67(String str, int i, int i2, int i3, int i4) {
+        String str2;
+        StringBuilder sb = new StringBuilder();
+        sb.append(getString(R.string.text_261));
+        sb.append(str);
+        if (i > 1) {
+            str2 = getString(R.string.text_262) + i2 + "/" + i;
+        } else {
+            str2 = "";
+        }
+        sb.append(str2);
+        sb.append(" (");
+        sb.append(i3);
+        sb.append("/");
+        sb.append(i4);
+        sb.append(").");
+        lambda$append$117(sb.toString());
+        if ("queue".equals(this.currentPage) || "preview".equals(this.currentPage)) {
+            renderApp();
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$startPrintPass$74(boolean z, int i, int i2, String str, PrintFlow.Next next, final PrintRequest printRequest, final int i3, final int i4, String str2) {
+        String string;
+        String str3;
+        this.printInProgress = false;
+        this.currentJobName = null;
+        if (z) {
+            lambda$append$117(getString(R.string.text_263) + i + getString(R.string.text_016) + i2 + getString(R.string.text_264));
+            systemToast(getString(R.string.text_265), 1).show();
+            renderApp();
+            return;
+        }
+        if (str != null) {
+            lambda$append$117(getString(R.string.text_266) + str);
+            systemToast(getString(R.string.text_267) + str, 1).show();
+            renderApp();
+            return;
+        }
+        if (next == PrintFlow.Next.REINSERT_DUPLEX) {
+            lambda$append$117(getString(R.string.text_268));
+            renderApp();
+            showNativeDialog(dialogBuilder().setTitle(getString(R.string.text_269)).setMessage(getString(R.string.text_270) + i + getString(R.string.text_271)).setNegativeButton(getString(R.string.text_272), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda67
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i5) {
+                    MainActivity.this.lambda$startPrintPass$68(dialogInterface, i5);
+                }
+            }).setPositiveButton(getString(R.string.text_274), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda68
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i5) {
+                    MainActivity.this.lambda$startPrintPass$69(printRequest, dialogInterface, i5);
+                }
+            }).create());
+            return;
+        }
+        if (next == PrintFlow.Next.REINSERT_BOOKLET) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(getString(R.string.text_275));
+            String str4 = "";
+            if (i4 > 1) {
+                str3 = getString(R.string.text_276) + i3 + "/" + i4;
+            } else {
+                str3 = "";
+            }
+            sb.append(str3);
+            sb.append(getString(R.string.text_277));
+            lambda$append$117(sb.toString());
+            renderApp();
+            AlertDialog.Builder title = dialogBuilder().setTitle(getString(R.string.text_278));
+            StringBuilder sb2 = new StringBuilder();
+            sb2.append(getString(R.string.text_270));
+            sb2.append(i);
+            sb2.append(getString(R.string.text_279));
+            if (i4 > 1) {
+                str4 = getString(R.string.text_280) + i3 + getString(R.string.text_016) + i4;
+            }
+            sb2.append(str4);
+            sb2.append(getString(R.string.text_281));
+            showNativeDialog(title.setMessage(sb2.toString()).setNegativeButton(getString(R.string.text_272), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda69
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i5) {
+                    MainActivity.this.lambda$startPrintPass$70(dialogInterface, i5);
+                }
+            }).setPositiveButton(getString(R.string.text_274), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda70
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i5) {
+                    MainActivity.this.lambda$startPrintPass$71(i3, printRequest, dialogInterface, i5);
+                }
+            }).create());
+            return;
+        }
+        if (next == PrintFlow.Next.NEXT_COPY) {
+            lambda$append$117(getString(R.string.text_283) + i3 + "/" + i4 + getString(R.string.text_284));
+            renderApp();
+            AlertDialog.Builder title2 = dialogBuilder().setTitle(getString(R.string.text_285));
+            StringBuilder sb3 = new StringBuilder();
+            sb3.append(getString(R.string.text_283));
+            sb3.append(i3);
+            sb3.append(getString(R.string.text_016));
+            sb3.append(i4);
+            sb3.append(getString(R.string.text_286));
+            int i5 = i3 + 1;
+            sb3.append(i5);
+            sb3.append(".");
+            AlertDialog.Builder negativeButton = title2.setMessage(sb3.toString()).setNegativeButton(getString(R.string.text_287) + i3 + getString(R.string.text_173), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda71
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i6) {
+                    MainActivity.this.lambda$startPrintPass$72(i3, i4, dialogInterface, i6);
+                }
+            });
+            StringBuilder sb4 = new StringBuilder();
+            sb4.append(getString(R.string.text_290));
+            sb4.append(i5);
+            showNativeDialog(negativeButton.setPositiveButton(sb4.toString(), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda72
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i6) {
+                    MainActivity.this.lambda$startPrintPass$73(i3, printRequest, dialogInterface, i6);
+                }
+            }).create());
+            return;
+        }
+        if ("booklet-front".equals(str2)) {
+            lambda$append$117(getString(R.string.text_291));
+        } else {
+            lambda$append$117(getString(R.string.text_292) + i + getString(R.string.text_293));
+        }
+        if ("even".equals(str2) || "booklet-back".equals(str2)) {
+            string = getString(R.string.text_294);
+        } else {
+            string = getString(R.string.text_295);
+        }
+        systemToast(string, 1).show();
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$startPrintPass$68(DialogInterface dialogInterface, int i) {
+        systemToast(getString(R.string.text_273), 1).show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$startPrintPass$69(PrintRequest printRequest, DialogInterface dialogInterface, int i) {
+        startPrintPass("even", 1, printRequest);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$startPrintPass$70(DialogInterface dialogInterface, int i) {
+        systemToast(getString(R.string.text_282), 1).show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$startPrintPass$71(int i, PrintRequest printRequest, DialogInterface dialogInterface, int i2) {
+        startPrintPass("booklet-back", i, printRequest);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$startPrintPass$72(int i, int i2, DialogInterface dialogInterface, int i3) {
+        systemToast(getString(R.string.text_288) + i + getString(R.string.text_016) + i2 + getString(R.string.text_289), 1).show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$startPrintPass$73(int i, PrintRequest printRequest, DialogInterface dialogInterface, int i2) {
+        startPrintPass("booklet-front", i + 1, printRequest);
+    }
+
+    private static final class SheetJob extends PrintFlow.Sheet {
+        private SheetJob() {
+        }
+    }
+
+    private SheetComposer.Mode currentLayoutMode() {
+        String str = this.layoutMode;
+        str.hashCode();
+        switch (str) {
+            case "poster":
+                return SheetComposer.Mode.POSTER;
+            case "booklet":
+                return SheetComposer.Mode.BOOKLET;
+            case "multiple":
+                return SheetComposer.Mode.MULTIPLE;
+            default:
+                return SheetComposer.Mode.SIZE;
+        }
+    }
+
+    private SheetComposer.Binding currentBinding() {
+        return "left".equals(this.bookletBinding) ? SheetComposer.Binding.LEFT : SheetComposer.Binding.RIGHT;
+    }
+
+    private SheetComposer.ScaleMode currentScaleMode() {
+        String str = this.scaleModePref;
+        str.hashCode();
+        switch (str) {
+            case "actual":
+                return SheetComposer.ScaleMode.ACTUAL;
+            case "custom":
+                return SheetComposer.ScaleMode.CUSTOM;
+            case "shrink":
+                return SheetComposer.ScaleMode.SHRINK;
+            default:
+                return SheetComposer.ScaleMode.FIT;
+        }
+    }
+
+    private boolean documentIsLandscape() {
+        DocumentRenderer documentRenderer = this.documentRenderer;
+        if (documentRenderer != null && documentRenderer.isSupported()) {
+            try {
+                Bitmap renderPage = this.documentRenderer.renderPage(0, 64, 64);
+                boolean z = renderPage.getWidth() > renderPage.getHeight();
+                renderPage.recycle();
+                return z;
+            } catch (Exception unused) {
+            }
+        }
+        return false;
+    }
+
+    private boolean resolveSheetLandscape(SheetComposer.Mode mode) {
+        if (mode == SheetComposer.Mode.BOOKLET || "landscape".equals(this.layoutOrientation)) {
+            return true;
+        }
+        if ("portrait".equals(this.layoutOrientation)) {
+            return false;
+        }
+        return mode == SheetComposer.Mode.SIZE && documentIsLandscape();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public SheetComposer.Spec buildSheetSpec(int i) {
+        SheetComposer.Mode currentLayoutMode = currentLayoutMode();
+        boolean resolveSheetLandscape = resolveSheetLandscape(currentLayoutMode);
+        int[] sheetDims = SheetComposer.sheetDims(this.paperSize, resolveSheetLandscape, i);
+        SheetComposer.Spec spec = new SheetComposer.Spec();
+        spec.mode = currentLayoutMode;
+        spec.scaleMode = currentScaleMode();
+        spec.customScalePercent = this.customScalePercent;
+        spec.pagesPerSheet = this.pagesPerSheet;
+        spec.sheetWidthPx = sheetDims[0];
+        spec.sheetHeightPx = sheetDims[1];
+        spec.marginPx = SheetComposer.marginPx(this.paperSize, resolveSheetLandscape, i);
+        float[] paperMm = SheetComposer.paperMm(this.paperSize);
+        spec.paperWidthMm = resolveSheetLandscape ? paperMm[1] : paperMm[0];
+        spec.rtl = !"ltr".equals(this.readingOrder);
+        spec.binding = currentBinding();
+        spec.posterScalePercent = this.posterScalePercent;
+        spec.overlapPx = Math.max(0, Math.round((this.posterOverlapMm * i) / spec.paperWidthMm));
+        spec.cutMarks = this.posterCutMarks;
+        return spec;
+    }
+
+    private int[] posterGridFor(SheetComposer.Spec spec, DocumentRenderer documentRenderer, int i) throws Exception {
+        return posterGridFor(spec, documentRenderer, i, this.paperSize, this.posterOverlapMm);
+    }
+
+    private int[] posterGridFor(SheetComposer.Spec spec, DocumentRenderer documentRenderer, int i, String str, int i2) throws Exception {
+        float f;
+        float f2;
+        float[] paperMm = SheetComposer.paperMm(str);
+        boolean z = spec.sheetWidthPx > spec.sheetHeightPx;
+        float f3 = (z ? paperMm[1] : paperMm[0]) - 8.0f;
+        float f4 = (z ? paperMm[0] : paperMm[1]) - 8.0f;
+        float[] pagePhysicalMm = documentRenderer.pagePhysicalMm(i);
+        if (pagePhysicalMm != null) {
+            f2 = pagePhysicalMm[0];
+            f = pagePhysicalMm[1];
+        } else {
+            float pageAspect = pageAspect(documentRenderer, i);
+            float min = Math.min(f3, f4 * pageAspect);
+            f = min / pageAspect;
+            f2 = min;
+        }
+        return SheetComposer.posterGridMm(f3, f4, i2, f2, f, spec.posterScalePercent);
+    }
+
+    private float pageAspect(DocumentRenderer documentRenderer, int i) throws Exception {
+        String str = System.identityHashCode(documentRenderer) + "#" + i;
+        Float f = this.imageAspectCache.get(str);
+        if (f != null) {
+            return f.floatValue();
+        }
+        Bitmap renderPage = documentRenderer.renderPage(i, 256, 256);
+        float width = renderPage.getWidth() / (float) Math.max(1, renderPage.getHeight());
+        renderPage.recycle();
+        this.imageAspectCache.put(str, Float.valueOf(width));
+        return width;
+    }
+
+    private static float posterBase100(SheetComposer.Spec spec, float[] fArr, int i, int i2) {
+        if (fArr != null) {
+            return SheetComposer.actualScale(fArr[0], spec.paperWidthMm, spec.sheetWidthPx, i);
+        }
+        return Math.min((spec.sheetWidthPx - (spec.marginPx * 2)) / (float) i, (spec.sheetHeightPx - (spec.marginPx * 2)) / (float) i2);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public int resolveSourceCode() {
+        if ("main".equals(this.paperSource)) {
+            return 1;
+        }
+        if ("priority".equals(this.paperSource)) {
+            return 4;
+        }
+        if (this.paperSize == null || this.sourceMapMain.isEmpty() || !this.paperSize.equalsIgnoreCase(this.sourceMapMain)) {
+            return (this.paperSize == null || this.sourceMapPriority.isEmpty() || !this.paperSize.equalsIgnoreCase(this.sourceMapPriority)) ? 7 : 4;
+        }
+        return 1;
+    }
+
+    private ArrayList<SheetJob> planSheets(ArrayList<Integer> arrayList, DocumentRenderer documentRenderer) {
+        return planSheets(arrayList, documentRenderer, buildSheetSpec(1000), this.paperSize, this.posterOverlapMm);
+    }
+
+    private ArrayList<SheetJob> planSheets(ArrayList<Integer> arrayList, DocumentRenderer documentRenderer, SheetComposer.Spec spec, String str, int i) {
+        int[] iArr;
+        SheetComposer.Mode mode = spec.mode;
+        ArrayList<SheetJob> arrayList2 = new ArrayList<>();
+        if (mode == SheetComposer.Mode.MULTIPLE) {
+            int max = Math.max(2, spec.pagesPerSheet);
+            for (int i2 = 0; i2 < arrayList.size(); i2 += max) {
+                SheetJob sheetJob = new SheetJob();
+                int min = Math.min(max, arrayList.size() - i2);
+                sheetJob.pages = new int[min];
+                StringBuilder sb = new StringBuilder(getString(R.string.text_296));
+                for (int i3 = 0; i3 < min; i3++) {
+                    int i4 = i2 + i3;
+                    sheetJob.pages[i3] = arrayList.get(i4).intValue();
+                    if (i3 > 0) {
+                        sb.append(getString(R.string.text_229));
+                    }
+                    sb.append(arrayList.get(i4).intValue() + 1);
+                }
+                sheetJob.label = sb.toString();
+                arrayList2.add(sheetJob);
+            }
+        } else if (mode == SheetComposer.Mode.POSTER) {
+            Iterator<Integer> it = arrayList.iterator();
+            while (it.hasNext()) {
+                int intValue = it.next().intValue();
+                try {
+                    iArr = posterGridFor(spec, documentRenderer, intValue, str, i);
+                } catch (Exception unused) {
+                    iArr = new int[]{2, 2};
+                }
+                int i5 = iArr[0] * iArr[1];
+                int i6 = 0;
+                while (i6 < i5) {
+                    SheetJob sheetJob2 = new SheetJob();
+                    sheetJob2.pages = new int[]{intValue};
+                    sheetJob2.posterTile = i6;
+                    sheetJob2.posterCols = iArr[0];
+                    sheetJob2.posterRows = iArr[1];
+                    StringBuilder sb2 = new StringBuilder();
+                    sb2.append(getString(R.string.text_297));
+                    i6++;
+                    sb2.append(i6);
+                    sb2.append("/");
+                    sb2.append(i5);
+                    sb2.append(getString(R.string.text_298));
+                    sb2.append(intValue + 1);
+                    sheetJob2.label = sb2.toString();
+                    arrayList2.add(sheetJob2);
+                }
+            }
+        } else if (mode == SheetComposer.Mode.BOOKLET) {
+            Iterator<PrintFlow.Sheet> it2 = PrintFlow.booklet(arrayList, spec.binding).iterator();
+            while (it2.hasNext()) {
+                PrintFlow.Sheet next = it2.next();
+                SheetJob sheetJob3 = new SheetJob();
+                sheetJob3.pages = next.pages;
+                sheetJob3.bookletBack = next.bookletBack;
+                StringBuilder sb3 = new StringBuilder();
+                sb3.append(getString(R.string.text_441));
+                sb3.append(getString(next.bookletBack ? R.string.text_442 : R.string.text_443));
+                sb3.append(getString(R.string.text_444));
+                sb3.append((arrayList2.size() / 2) + 1);
+                sheetJob3.label = sb3.toString();
+                arrayList2.add(sheetJob3);
+            }
+        } else {
+            Iterator<Integer> it3 = arrayList.iterator();
+            while (it3.hasNext()) {
+                int intValue2 = it3.next().intValue();
+                SheetJob sheetJob4 = new SheetJob();
+                sheetJob4.pages = new int[]{intValue2};
+                sheetJob4.label = getString(R.string.text_084) + (intValue2 + 1);
+                arrayList2.add(sheetJob4);
+            }
+        }
+        return arrayList2;
+    }
+
+    private ArrayList<SheetJob> previewPlan() {
+        ArrayList<Integer> resolvePageRange;
+        int pageCount = this.documentRenderer.getPageCount();
+        try {
+            resolvePageRange = resolvePageRange(this.pageRange, pageCount);
+        } catch (IllegalArgumentException unused) {
+            resolvePageRange = resolvePageRange("all", pageCount);
+        }
+        return planSheets(resolvePageRange, this.documentRenderer);
+    }
+
+    private Bitmap renderPreviewSheet(SheetComposer.Spec spec, SheetJob sheetJob) throws Exception {
+        return renderPreviewSheet(spec, sheetJob, this.documentRenderer);
+    }
+
+    private Bitmap renderPreviewSheet(final SheetComposer.Spec spec, SheetJob sheetJob, final DocumentRenderer documentRenderer) throws Exception {
+        final boolean z = spec.mode == SheetComposer.Mode.SIZE && spec.sheetWidthPx > spec.sheetHeightPx;
+        SheetComposer.PageSource pageSource = new SheetComposer.PageSource() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.7
+            @Override // com.mohamedelnaggar.hpp1005.SheetComposer.PageSource
+            public Bitmap page(int i) throws Exception {
+                Bitmap renderPage = documentRenderer.renderPage(i, spec.sheetWidthPx, spec.sheetHeightPx);
+                if (!z) {
+                    return renderPage;
+                }
+                Bitmap rotate = Foo2XqxConverter.rotate(renderPage, 90.0f);
+                renderPage.recycle();
+                return rotate;
+            }
+
+            @Override // com.mohamedelnaggar.hpp1005.SheetComposer.PageSource
+            public void release(Bitmap bitmap) {
+                if (bitmap == null || bitmap.isRecycled()) {
+                    return;
+                }
+                bitmap.recycle();
+            }
+
+            @Override // com.mohamedelnaggar.hpp1005.SheetComposer.PageSource
+            public float[] pagePhysicalMm(int i) {
+                return documentRenderer.pagePhysicalMm(i);
+            }
+        };
+        if (sheetJob.posterTile >= 0) {
+            Bitmap page = pageSource.page(sheetJob.pages[0]);
+            try {
+                return SheetComposer.composePosterTile(spec, page, sheetJob.posterTile, sheetJob.posterCols, sheetJob.posterRows, posterBase100(spec, pageSource.pagePhysicalMm(sheetJob.pages[0]), page.getWidth(), page.getHeight()));
+            } finally {
+                pageSource.release(page);
+            }
+        }
+        return SheetComposer.composeSheet(spec, sheetJob.pages, pageSource);
+    }
+
+    private String layoutSummary() {
+        String str = this.layoutMode;
+        str.hashCode();
+        switch (str) {
+            case "poster":
+                return getString(R.string.text_299) + ((int) this.posterScalePercent) + getString(R.string.text_300);
+            case "booklet":
+                return getString(R.string.text_302) + bindingLabel();
+            case "multiple":
+                return getString(R.string.text_301) + this.pagesPerSheet;
+            default:
+                return getString(R.string.text_303) + scaleModeLabel();
+        }
+    }
+
+    private String modeLabel() {
+        String str = this.layoutMode;
+        str.hashCode();
+        switch (str) {
+            case "poster":
+                return getString(R.string.text_304);
+            case "booklet":
+                return getString(R.string.text_306);
+            case "multiple":
+                return getString(R.string.text_305);
+            default:
+                return getString(R.string.text_307);
+        }
+    }
+
+    private String scaleModeLabel() {
+        String str = this.scaleModePref;
+        str.hashCode();
+        switch (str) {
+            case "actual":
+                return getString(R.string.text_308);
+            case "custom":
+                return getString(R.string.text_310) + this.customScalePercent + getString(R.string.text_300);
+            case "shrink":
+                return getString(R.string.text_309);
+            default:
+                return getString(R.string.text_311);
+        }
+    }
+
+    private String layoutOrientationLabel() {
+        return "landscape".equals(this.layoutOrientation) ? getString(R.string.text_312) : "portrait".equals(this.layoutOrientation) ? getString(R.string.text_313) : getString(R.string.text_314);
+    }
+
+    private String paperSourceLabel() {
+        return "main".equals(this.paperSource) ? getString(R.string.text_315) : "priority".equals(this.paperSource) ? getString(R.string.text_316) : getString(R.string.text_314);
+    }
+
+    private String bindingLabel() {
+        return getString("left".equals(this.bookletBinding) ? R.string.text_251 : R.string.text_250);
+    }
+
+    private String readingOrderLabel() {
+        return getString("ltr".equals(this.readingOrder) ? R.string.text_317 : R.string.text_318);
+    }
+
+    private String sourceMapSummary() {
+        if (this.sourceMapMain.isEmpty() && this.sourceMapPriority.isEmpty()) {
+            return getString(R.string.text_319);
+        }
+        StringBuilder sb = new StringBuilder();
+        if (!this.sourceMapMain.isEmpty()) {
+            sb.append(getString(R.string.text_320));
+            sb.append(this.sourceMapMain);
+        }
+        if (!this.sourceMapPriority.isEmpty()) {
+            if (sb.length() > 0) {
+                sb.append(" · ");
+            }
+            sb.append(getString(R.string.text_321));
+            sb.append(this.sourceMapPriority);
+        }
+        return sb.toString();
+    }
+
+    private int layoutModeIndex() {
+        if ("poster".equals(this.layoutMode)) {
+            return 1;
+        }
+        if ("multiple".equals(this.layoutMode)) {
+            return 2;
+        }
+        return "booklet".equals(this.layoutMode) ? 3 : 0;
+    }
+
+    private LinearLayout buildModeSegment() {
+        LinearLayout vertical = vertical();
+        final FrameLayout frameLayout = new FrameLayout(this);
+        frameLayout.setBackground(flat(this.darkMode ? 1031305344 : 527988864, 14));
+        View view = new View(this);
+        this.layoutModePill = view;
+        view.setBackground(flat(this.darkMode ? -12961217 : -1, 10));
+        frameLayout.addView(this.layoutModePill, new FrameLayout.LayoutParams(0, dp(36.0f)));
+        LinearLayout horizontal = horizontal();
+        String[] strArr = {"size", "poster", "multiple", "booklet"};
+        String[] strArr2 = {getString(R.string.text_307), getString(R.string.text_304), getString(R.string.text_305), getString(R.string.text_306)};
+        this.layoutModeLabels = new TextView[4];
+        this.layoutModePosition = layoutModeIndex();
+        for (int i = 0; i < 4; i++) {
+            final String str = strArr[i];
+            TextView label = label(strArr2[i], 12.0f, textSecondary(), true);
+            label.setGravity(17);
+            label.setClickable(true);
+            label.setFocusable(true);
+            label.setContentDescription(strArr2[i]);
+            label.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda120
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view2) {
+                    MainActivity.this.lambda$buildModeSegment$76(str, frameLayout, view2);
+                }
+            });
+            this.layoutModeLabels[i] = label;
+            horizontal.addView(label, new LinearLayout.LayoutParams(0, dp(40.0f), 1.0f));
+        }
+        frameLayout.addView(horizontal, new FrameLayout.LayoutParams(-1, dp(40.0f)));
+        frameLayout.addOnLayoutChangeListener(new View.OnLayoutChangeListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda131
+            @Override // android.view.View.OnLayoutChangeListener
+            public final void onLayoutChange(View view2, int i2, int i3, int i4, int i5, int i6, int i7, int i8, int i9) {
+                MainActivity.this.lambda$buildModeSegment$77(frameLayout, view2, i2, i3, i4, i5, i6, i7, i8, i9);
+            }
+        });
+        vertical.addView(frameLayout, new LinearLayout.LayoutParams(-1, dp(40.0f)));
+        return vertical;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildModeSegment$76(String str, FrameLayout frameLayout, View view) {
+        performTapFeedback(view);
+        if (str.equals(this.layoutMode)) {
+            return;
+        }
+        this.layoutMode = str;
+        this.printPreferences.edit().putString("layout_mode", str).apply();
+        this.currentPreviewPage = 0;
+        animateLayoutMode(frameLayout);
+        refreshLayoutSettings();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildModeSegment$77(FrameLayout frameLayout, View view, int i, int i2, int i3, int i4, int i5, int i6, int i7, int i8) {
+        placeLayoutPill(frameLayout);
+    }
+
+    private void placeLayoutPill(FrameLayout frameLayout) {
+        float width = frameLayout.getWidth() / 4.0f;
+        float f = this.layoutModePosition;
+        float max = Math.max(0.0f, width - dp(4.0f)) * ((((float) Math.sin((f - ((float) Math.floor(f))) * 3.141592653589793d)) * 0.14f) + 1.0f);
+        float width2 = isArabic() ? frameLayout.getWidth() - (width * (this.layoutModePosition + 0.5f)) : (this.layoutModePosition + 0.5f) * width;
+        FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) this.layoutModePill.getLayoutParams();
+        int round = Math.round(max);
+        if (layoutParams.width != round || layoutParams.height != dp(36.0f) || layoutParams.topMargin != dp(2.0f)) {
+            layoutParams.width = round;
+            layoutParams.height = dp(36.0f);
+            layoutParams.gravity = 51;
+            layoutParams.topMargin = dp(2.0f);
+            this.layoutModePill.setLayoutParams(layoutParams);
+        }
+        this.layoutModePill.setTranslationX(width2 - (max / 2.0f));
+        int i = 0;
+        while (i < 4) {
+            this.layoutModeLabels[i].setSelected(i == layoutModeIndex());
+            this.layoutModeLabels[i].setTextColor(i == layoutModeIndex() ? textPrimary() : textSecondary());
+            i++;
+        }
+    }
+
+    private void animateLayoutMode(final FrameLayout frameLayout) {
+        ValueAnimator valueAnimator = this.layoutModeAnimator;
+        if (valueAnimator != null) {
+            valueAnimator.cancel();
+        }
+        if (reducedMotion()) {
+            this.layoutModePosition = layoutModeIndex();
+            placeLayoutPill(frameLayout);
+            return;
+        }
+        ValueAnimator ofFloat = ValueAnimator.ofFloat(this.layoutModePosition, layoutModeIndex());
+        this.layoutModeAnimator = ofFloat;
+        ofFloat.setDuration(280L);
+        this.layoutModeAnimator.setInterpolator(new PathInterpolator(0.22f, 0.25f, 0.0f, 1.0f));
+        this.layoutModeAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda83
+            @Override // android.animation.ValueAnimator.AnimatorUpdateListener
+            public final void onAnimationUpdate(ValueAnimator valueAnimator2) {
+                MainActivity.this.lambda$animateLayoutMode$78(frameLayout, valueAnimator2);
+            }
+        });
+        this.layoutModeAnimator.start();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$animateLayoutMode$78(FrameLayout frameLayout, ValueAnimator valueAnimator) {
+        this.layoutModePosition = ((Float) valueAnimator.getAnimatedValue()).floatValue();
+        placeLayoutPill(frameLayout);
+    }
+
+    private void addLayoutRow(LinearLayout linearLayout, String str, String str2, String str3, boolean z, Runnable runnable) {
+        addLayoutRow(linearLayout, str, str2, str3, z, runnable, null);
+    }
+
+    private void addLayoutRow(LinearLayout linearLayout, String str, String str2, String str3, boolean z, final Runnable runnable, String str4) {
+        LinearLayout horizontal = horizontal();
+        horizontal.setGravity(16);
+        horizontal.setPadding(0, dp(12.0f), 0, dp(12.0f));
+        LinearLayout vertical = vertical();
+        vertical.addView(label(str, 13.5f, textPrimary(), true), margin(0, 0, 0, 3));
+        TextView label = label(str2, 11.0f, textSecondary(), false);
+        label.setLineSpacing(dp(2.0f), 1.0f);
+        vertical.addView(label);
+        horizontal.addView(vertical, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        if (str4 != null) {
+            Button button = tonalButton(str4, 12.0f);
+            button.setMinHeight(dp(34.0f));
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-2, dp(36.0f));
+            layoutParams.setMarginStart(dp(10.0f));
+            button.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda30
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$addLayoutRow$79(runnable, view);
+                }
+            });
+            horizontal.addView(button, layoutParams);
+        } else {
+            TextView label2 = label(str3, 12.5f, tonalText(), true);
+            label2.setMaxLines(1);
+            LinearLayout.LayoutParams layoutParams2 = new LinearLayout.LayoutParams(-2, -2);
+            layoutParams2.setMarginStart(dp(10.0f));
+            horizontal.addView(label2, layoutParams2);
+            ImageView imageView = new ImageView(this);
+            imageView.setImageResource(R.drawable.ic_chevron_left);
+            imageView.setScaleX(isArabic() ? 1.0f : -1.0f);
+            imageView.setColorFilter(textSecondary(), PorterDuff.Mode.SRC_IN);
+            LinearLayout.LayoutParams layoutParams3 = new LinearLayout.LayoutParams(dp(18.0f), dp(18.0f));
+            layoutParams3.setMarginStart(dp(6.0f));
+            horizontal.addView(imageView, layoutParams3);
+        }
+        if (!z) {
+            horizontal.setAlpha(0.42f);
+        }
+        horizontal.setClickable(true);
+        horizontal.setFocusable(true);
+        horizontal.setHapticFeedbackEnabled(this.hapticsEnabled);
+        horizontal.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda31
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$addLayoutRow$80(runnable, view);
+            }
+        });
+        linearLayout.addView(horizontal, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$addLayoutRow$79(Runnable runnable, View view) {
+        performTapFeedback(view);
+        runnable.run();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$addLayoutRow$80(Runnable runnable, View view) {
+        performTapFeedback(view);
+        runnable.run();
+    }
+
+    private void buildLayoutPage(LinearLayout linearLayout) {
+        pageAppBar(linearLayout, getString(R.string.text_322));
+        LinearLayout vertical = vertical();
+        vertical.addView(sectionLabel(getString(R.string.text_100)), margin(2, 0, 0, 8));
+        vertical.addView(buildModeSegment(), margin(0, 0, 0, 12));
+        LinearLayout vertical2 = vertical();
+        this.layoutSettingsHost = vertical2;
+        vertical.addView(vertical2);
+        View buildLayoutPreviewCard = buildLayoutPreviewCard();
+        if (wideLayout()) {
+            addPair(linearLayout, vertical, buildLayoutPreviewCard);
+        } else {
+            linearLayout.addView(buildLayoutPreviewCard, margin(0, 0, 0, 20));
+            linearLayout.addView(vertical);
+        }
+        refreshLayoutSettings();
+    }
+
+    private void refreshLayoutSettings() {
+        LinearLayout linearLayout = this.layoutSettingsHost;
+        if (linearLayout == null) {
+            return;
+        }
+        linearLayout.removeAllViews();
+        buildLayoutSettings(this.layoutSettingsHost);
+        requestLayoutPreview();
+    }
+
+    private LinearLayout buildLayoutPreviewCard() {
+        LinearLayout card = card();
+        card.setPadding(dp(16.0f), dp(16.0f), dp(16.0f), dp(16.0f));
+        card.addView(label(getString(R.string.text_323), 16.0f, textPrimary(), true));
+        TextView label = label(this.selectedDocumentName.isEmpty() ? getString(R.string.text_324) : this.selectedDocumentName, 11.0f, textSecondary(), false);
+        label.setMaxLines(2);
+        label.setEllipsize(TextUtils.TruncateAt.END);
+        card.addView(label, margin(0, 5, 0, 12));
+        FrameLayout frameLayout = new FrameLayout(this);
+        this.layoutPreviewHost = frameLayout;
+        frameLayout.setBackground(flat(this.darkMode ? -14013905 : -855051, 12));
+        this.layoutPreviewHost.setPadding(dp(9.0f), dp(9.0f), dp(9.0f), dp(9.0f));
+        ImageView imageView = new ImageView(this);
+        this.layoutPreviewImage = imageView;
+        imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        this.layoutPreviewImage.setContentDescription(getString(R.string.text_325));
+        this.layoutPreviewHost.addView(this.layoutPreviewImage, new FrameLayout.LayoutParams(-1, -1));
+        TextView label2 = label(getString(R.string.text_326), 13.0f, textPrimary(), false);
+        this.layoutPreviewStatus = label2;
+        label2.setGravity(17);
+        this.layoutPreviewStatus.setPadding(dp(16.0f), dp(12.0f), dp(16.0f), dp(12.0f));
+        this.layoutPreviewHost.addView(this.layoutPreviewStatus, new FrameLayout.LayoutParams(-1, -1));
+        card.addView(this.layoutPreviewHost, new LinearLayout.LayoutParams(-1, dp(wideLayout() ? 350 : 240)));
+        LinearLayout horizontal = horizontal();
+        horizontal.setGravity(16);
+        this.layoutPrevious = tonalButton(getString(R.string.text_088), 12.0f);
+        this.layoutNext = tonalButton(getString(R.string.text_089), 12.0f);
+        TextView label3 = label("", 11.0f, textSecondary(), true);
+        this.layoutPreviewCount = label3;
+        label3.setGravity(17);
+        this.layoutPrevious.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda98
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildLayoutPreviewCard$81(view);
+            }
+        });
+        this.layoutNext.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda109
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                MainActivity.this.lambda$buildLayoutPreviewCard$82(view);
+            }
+        });
+        horizontal.addView(this.layoutPrevious, new LinearLayout.LayoutParams(-2, dp(44.0f)));
+        horizontal.addView(this.layoutPreviewCount, new LinearLayout.LayoutParams(0, -2, 1.0f));
+        horizontal.addView(this.layoutNext, new LinearLayout.LayoutParams(-2, dp(44.0f)));
+        card.addView(horizontal, margin(0, 12, 0, 0));
+        return card;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildLayoutPreviewCard$81(View view) {
+        this.currentPreviewPage = Math.max(0, this.currentPreviewPage - 1);
+        requestLayoutPreview();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildLayoutPreviewCard$82(View view) {
+        this.currentPreviewPage++;
+        requestLayoutPreview();
+    }
+
+    private void setLayoutNavigation(boolean z, boolean z2) {
+        this.layoutPrevious.setEnabled(z);
+        this.layoutPrevious.setAlpha(z ? 1.0f : 0.38f);
+        this.layoutNext.setEnabled(z2);
+        this.layoutNext.setAlpha(z2 ? 1.0f : 0.38f);
+    }
+
+    private void layoutPreviewError(String str) {
+        this.layoutPreviewImage.setImageDrawable(null);
+        this.layoutPreviewStatus.setText(str);
+        this.layoutPreviewStatus.setVisibility(0);
+        this.layoutPreviewCount.setText("");
+        setLayoutNavigation(false, false);
+    }
+
+    private void requestLayoutPreview() {
+        DocumentRenderer documentRenderer;
+        MainActivity mainActivity;
+        final int i = this.layoutPreviewGeneration + 1;
+        this.layoutPreviewGeneration = i;
+        Future<?> future = this.layoutPreviewTask;
+        if (future != null) {
+            future.cancel(true);
+        }
+        ImageView imageView = this.layoutPreviewImage;
+        if (imageView == null) {
+            return;
+        }
+        imageView.setImageDrawable(null);
+        this.layoutPreviewStatus.setText(getString(R.string.text_326));
+        this.layoutPreviewStatus.setVisibility(0);
+        this.layoutPreviewCount.setText("");
+        setLayoutNavigation(false, false);
+        if (this.selectedDocumentUri == null || (documentRenderer = this.documentRenderer) == null) {
+            layoutPreviewError(getString(R.string.text_327));
+            return;
+        }
+        if (!documentRenderer.isSupported()) {
+            layoutPreviewError(getString(R.string.text_328));
+            return;
+        }
+        try {
+            final ArrayList<SheetJob> planSheets = planSheets(resolvePageRange(this.pageRange, this.documentRenderer.getPageCount()), this.documentRenderer);
+            if (planSheets.isEmpty()) {
+                mainActivity = this;
+                try {
+                    throw new IllegalArgumentException(mainActivity.getString(R.string.text_329));
+                } catch (Exception unused) {
+                    mainActivity.layoutPreviewError(mainActivity.getString(R.string.text_330));
+                    return;
+                }
+            }
+            this.currentPreviewPage = Math.max(0, Math.min(this.currentPreviewPage, planSheets.size() - 1));
+            final SheetComposer.Spec buildSheetSpec = buildSheetSpec(Math.min(1000, Math.max(480, getResources().getDisplayMetrics().widthPixels / (wideLayout() ? 2 : 1))));
+            final int i2 = this.currentPreviewPage;
+            final Uri uri = this.selectedDocumentUri;
+            final String str = this.selectedDocumentName;
+            final String str2 = this.selectedDocumentMime;
+            final ImageView imageView2 = this.layoutPreviewImage;
+            final TextView textView = this.layoutPreviewStatus;
+            final TextView textView2 = this.layoutPreviewCount;
+            final Button button = this.layoutPrevious;
+            final Button button2 = this.layoutNext;
+            this.layoutPreviewTask = this.layoutPreviewExecutor.submit(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda13
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$requestLayoutPreview$85(uri, str, str2, buildSheetSpec, planSheets, i2, i, imageView2, textView, textView2, button, button2);
+                }
+            });
+        } catch (Exception unused2) {
+            mainActivity = this;
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$requestLayoutPreview$85(Uri uri, String str, String str2, final SheetComposer.Spec spec, final ArrayList arrayList, final int i, final int i2, final ImageView imageView, final TextView textView, final TextView textView2, final Button button, final Button button2) {
+        try {
+            DocumentRenderer documentRenderer = new DocumentRenderer(this, uri, str, str2);
+            try {
+                if (!Thread.currentThread().isInterrupted()) {
+                    final Bitmap renderPreviewSheet = renderPreviewSheet(spec, (SheetJob) arrayList.get(i), documentRenderer);
+                    runOnUiThread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda130
+                        @Override // java.lang.Runnable
+                        public final void run() {
+                            MainActivity.this.lambda$requestLayoutPreview$83(i2, imageView, renderPreviewSheet, textView, textView2, spec, i, arrayList, button, button2);
+                        }
+                    });
+                    documentRenderer.close();
+                    return;
+                }
+                documentRenderer.close();
+            } finally {
+            }
+        } catch (Exception unused) {
+            runOnUiThread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda132
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$requestLayoutPreview$84(i2, imageView);
+                }
+            });
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$requestLayoutPreview$83(int i, ImageView imageView, Bitmap bitmap, TextView textView, TextView textView2, SheetComposer.Spec spec, int i2, ArrayList arrayList, Button button, Button button2) {
+        if (i != this.layoutPreviewGeneration || isFinishing() || isDestroyed() || !"layout".equals(this.currentPage) || !imageView.isAttachedToWindow()) {
+            bitmap.recycle();
+            return;
+        }
+        Bitmap bitmap2 = this.layoutPreviewBitmap;
+        this.layoutPreviewBitmap = bitmap;
+        imageView.setImageBitmap(bitmap);
+        textView.setVisibility(8);
+        StringBuilder sb = new StringBuilder();
+        sb.append(getString(spec.mode == SheetComposer.Mode.SIZE ? R.string.text_084 : R.string.text_331));
+        int i3 = i2 + 1;
+        sb.append(i3);
+        sb.append(getString(R.string.text_016));
+        sb.append(arrayList.size());
+        textView2.setText(sb.toString());
+        button.setEnabled(i2 > 0);
+        button.setAlpha(i2 > 0 ? 1.0f : 0.38f);
+        button2.setEnabled(i3 < arrayList.size());
+        button2.setAlpha(i3 >= arrayList.size() ? 0.38f : 1.0f);
+        if (bitmap2 == null || bitmap2 == bitmap || bitmap2.isRecycled()) {
+            return;
+        }
+        bitmap2.recycle();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$requestLayoutPreview$84(int i, ImageView imageView) {
+        if (i == this.layoutPreviewGeneration && imageView.isAttachedToWindow()) {
+            layoutPreviewError(getString(R.string.text_332));
+        }
+    }
+
+    private void buildLayoutSettings(LinearLayout linearLayout) {
+        String string;
+        Runnable runnable;
+        Runnable runnable2;
+        boolean equals = "size".equals(this.layoutMode);
+        boolean equals2 = "poster".equals(this.layoutMode);
+        boolean equals3 = "multiple".equals(this.layoutMode);
+        boolean equals4 = "booklet".equals(this.layoutMode);
+        LinearLayout card = card();
+        card.setPadding(dp(16.0f), dp(5.0f), dp(16.0f), dp(5.0f));
+        String string2 = getString(R.string.text_333);
+        if (equals) {
+            string = getString(R.string.text_334);
+        } else {
+            string = getString(R.string.text_335);
+        }
+        addLayoutRow(card, string2, string, scaleModeLabel(), equals, equals ? new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda134
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.showScaleModeOptions();
+            }
+        } : new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda140
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$buildLayoutSettings$86();
+            }
+        });
+        addSeparator(card);
+        addLayoutRow(card, getString(R.string.text_337), getString(R.string.text_338), this.customScalePercent + getString(R.string.text_300), equals && "custom".equals(this.scaleModePref), (equals && "custom".equals(this.scaleModePref)) ? new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda141
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.showCustomScaleOptions();
+            }
+        } : new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda5
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$buildLayoutSettings$87();
+            }
+        });
+        addSeparator(card);
+        String string3 = getString(R.string.text_340);
+        String string4 = getString(equals4 ? R.string.text_341 : R.string.text_342);
+        String string5 = equals4 ? getString(R.string.text_312) : layoutOrientationLabel();
+        boolean z = !equals4;
+        if (!equals4) {
+            runnable = new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda6
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.showLayoutOrientationOptions();
+                }
+            };
+        } else {
+            runnable = new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda7
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$buildLayoutSettings$88();
+                }
+            };
+        }
+        addLayoutRow(card, string3, string4, string5, z, runnable);
+        addSeparator(card);
+        String string6 = getString(R.string.text_344);
+        String string7 = getString(R.string.text_345);
+        String valueOf = String.valueOf(this.pagesPerSheet);
+        if (equals3) {
+            runnable2 = new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda8
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.showPagesPerSheetOptions();
+                }
+            };
+        } else {
+            runnable2 = new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda9
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$buildLayoutSettings$89();
+                }
+            };
+        }
+        addLayoutRow(card, string6, string7, valueOf, equals3, runnable2);
+        if (equals3 || equals2) {
+            addSeparator(card);
+            addLayoutRow(card, getString(R.string.text_347), getString(R.string.text_348), readingOrderLabel(), true, new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda10
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.showReadingOrderOptions();
+                }
+            });
+        }
+        if (equals2) {
+            addSeparator(card);
+            addLayoutRow(card, getString(R.string.text_349), getString(R.string.text_350), ((int) this.posterScalePercent) + getString(R.string.text_300), true, new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda11
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.showPosterScaleOptions();
+                }
+            });
+            addSeparator(card);
+            addSettingToggle(card, getString(R.string.text_351), getString(R.string.text_352), this.posterCutMarks, new ToggleAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda135
+                @Override // com.mohamedelnaggar.hpp1005.MainActivity.ToggleAction
+                public final void onToggle(boolean z2) {
+                    MainActivity.this.lambda$buildLayoutSettings$90(z2);
+                }
+            });
+            addSeparator(card);
+            addLayoutRow(card, getString(R.string.text_353), getString(R.string.text_354), this.posterOverlapMm + getString(R.string.text_355), true, new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda136
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.showPosterOverlapOptions();
+                }
+            });
+        }
+        if (equals4) {
+            addSeparator(card);
+            addLayoutRow(card, getString(R.string.text_356), getString(R.string.text_357), bindingLabel(), true, new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda137
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.showBindingOptions();
+                }
+            });
+        }
+        linearLayout.addView(card, margin(0, 0, 0, 14));
+        linearLayout.addView(sectionLabel(getString(R.string.text_358)), margin(2, 0, 0, 8));
+        LinearLayout card2 = card();
+        card2.setPadding(dp(16.0f), dp(5.0f), dp(16.0f), dp(5.0f));
+        addLayoutRow(card2, getString(R.string.text_359), getString(R.string.text_360), paperSourceLabel(), true, new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda138
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.showPaperSourceOptions();
+            }
+        });
+        addSeparator(card2);
+        addLayoutRow(card2, getString(R.string.text_361), getString(R.string.text_362), sourceMapSummary(), true, new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda139
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$buildLayoutSettings$91();
+            }
+        }, getString(R.string.text_189));
+        linearLayout.addView(card2, margin(0, 0, 0, 12));
+        if (equals4) {
+            TextView label = label(getString(R.string.text_363), 11.5f, textSecondary(), false);
+            label.setLineSpacing(dp(3.0f), 1.0f);
+            linearLayout.addView(label, margin(3, 0, 3, 10));
+        }
+        TextView label2 = label(getString(R.string.text_364), 11.5f, textSecondary(), false);
+        label2.setLineSpacing(dp(3.0f), 1.0f);
+        linearLayout.addView(label2, margin(3, 0, 3, 12));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildLayoutSettings$86() {
+        systemToast(getString(R.string.text_336), 0).show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildLayoutSettings$87() {
+        systemToast(getString(R.string.text_339), 0).show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildLayoutSettings$88() {
+        systemToast(getString(R.string.text_343), 0).show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildLayoutSettings$89() {
+        systemToast(getString(R.string.text_346), 0).show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildLayoutSettings$90(boolean z) {
+        this.posterCutMarks = z;
+        this.printPreferences.edit().putBoolean("poster_cut_marks", z).apply();
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildLayoutSettings$91() {
+        openPage("sourcemap");
+    }
+
+    private void buildSourceMapPage(LinearLayout linearLayout) {
+        pageAppBar(linearLayout, getString(R.string.text_361));
+        TextView label = label(getString(R.string.text_365), 12.0f, textSecondary(), false);
+        label.setLineSpacing(dp(3.0f), 1.0f);
+        linearLayout.addView(label, margin(3, 0, 3, 12));
+        LinearLayout card = card();
+        card.setPadding(dp(16.0f), dp(5.0f), dp(16.0f), dp(5.0f));
+        addLayoutRow(card, getString(R.string.text_315), getString(R.string.text_366), this.sourceMapMain.isEmpty() ? getString(R.string.text_367) : this.sourceMapMain, true, new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda18
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$buildSourceMapPage$92();
+            }
+        });
+        addSeparator(card);
+        addLayoutRow(card, getString(R.string.text_316), getString(R.string.text_368), this.sourceMapPriority.isEmpty() ? getString(R.string.text_367) : this.sourceMapPriority, true, new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda19
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$buildSourceMapPage$93();
+            }
+        });
+        linearLayout.addView(card, margin(0, 0, 0, 12));
+        TextView label2 = label(getString(R.string.text_369), 11.5f, textSecondary(), false);
+        label2.setLineSpacing(dp(3.0f), 1.0f);
+        linearLayout.addView(label2, margin(3, 0, 3, 12));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSourceMapPage$92() {
+        showSourceTrayOptions(true);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$buildSourceMapPage$93() {
+        showSourceTrayOptions(false);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showScaleModeOptions() {
+        String[] strArr = {getString(R.string.text_311), getString(R.string.text_308), getString(R.string.text_309), getString(R.string.text_370)};
+        final String[] strArr2 = {"fit", "actual", "shrink", "custom"};
+        int i = 0;
+        for (int i2 = 0; i2 < 4; i2++) {
+            if (strArr2[i2].equals(this.scaleModePref)) {
+                i = i2;
+            }
+        }
+        showSelectionDialog(getString(R.string.text_333), strArr, i, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda53
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i3) {
+                MainActivity.this.lambda$showScaleModeOptions$94(strArr2, i3);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showScaleModeOptions$94(String[] strArr, int i) {
+        this.scaleModePref = strArr[i];
+        this.printPreferences.edit().putString("scale_mode", this.scaleModePref).apply();
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showCustomScaleOptions() {
+        LinearLayout vertical = vertical();
+        vertical.setPadding(dp(14.0f), dp(0.0f), dp(14.0f), dp(0.0f));
+        final EditText editText = new EditText(this);
+        editText.setSingleLine(true);
+        editText.setTextSize(15.0f);
+        editText.setGravity(17);
+        editText.setInputType(2);
+        editText.setHint(getString(R.string.text_371));
+        editText.setHintTextColor(textSecondary());
+        editText.setTextColor(textPrimary());
+        editText.setBackground(flat(this.darkMode ? -13552839 : -986892, 14));
+        editText.setText(String.valueOf(this.customScalePercent));
+        editText.setSelection(editText.getText().length());
+        vertical.addView(editText, new LinearLayout.LayoutParams(-1, dp(52.0f)));
+        int[] iArr = {25, 50, 75, 100, 150, 200};
+        LinearLayout horizontal = horizontal();
+        horizontal.setGravity(17);
+        int i = 0;
+        for (int i2 = 6; i < i2; i2 = 6) {
+            final int i3 = iArr[i];
+            TextView label = label(i3 + getString(R.string.text_300), 13.0f, this.darkMode ? -11756801 : -16747810, true);
+            label.setGravity(17);
+            label.setBackground(flat(this.darkMode ? -13552839 : -986892, 14));
+            label.setClickable(true);
+            label.setFocusable(true);
+            label.setHapticFeedbackEnabled(this.hapticsEnabled);
+            label.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda126
+                @Override // android.view.View.OnClickListener
+                public final void onClick(View view) {
+                    MainActivity.this.lambda$showCustomScaleOptions$95(editText, i3, view);
+                }
+            });
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(0, dp(38.0f), 1.0f);
+            layoutParams.setMarginStart(dp(6.0f));
+            horizontal.addView(label, layoutParams);
+            i++;
+        }
+        vertical.addView(horizontal, margin(0, 10, 0, 2));
+        oneUIFormDialog(getString(R.string.text_337), getString(R.string.text_372), vertical, new FormApply() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda127
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.FormApply
+            public final boolean apply() {
+                boolean lambda$showCustomScaleOptions$96;
+                lambda$showCustomScaleOptions$96 = MainActivity.this.lambda$showCustomScaleOptions$96(editText);
+                return lambda$showCustomScaleOptions$96;
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showCustomScaleOptions$95(EditText editText, int i, View view) {
+        performTapFeedback(view);
+        editText.setText(String.valueOf(i));
+        editText.setSelection(editText.getText().length());
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ boolean lambda$showCustomScaleOptions$96(EditText editText) {
+        try {
+            applyCustomScalePercent(Integer.parseInt(editText.getText().toString().trim()));
+            this.currentPreviewPage = 0;
+            renderApp();
+            return true;
+        } catch (NumberFormatException unused) {
+            systemToast(getString(R.string.text_373), 0).show();
+            return false;
+        }
+    }
+
+    private void applyCustomScalePercent(int i) {
+        int max = Math.max(10, Math.min(400, i));
+        this.customScalePercent = max;
+        this.printPreferences.edit().putInt("custom_scale", max).apply();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showLayoutOrientationOptions() {
+        String[] strArr = {getString(R.string.text_314), getString(R.string.text_313), getString(R.string.text_312)};
+        final String[] strArr2 = {DebugKt.DEBUG_PROPERTY_VALUE_AUTO, "portrait", "landscape"};
+        int i = 0;
+        for (int i2 = 0; i2 < 3; i2++) {
+            if (strArr2[i2].equals(this.layoutOrientation)) {
+                i = i2;
+            }
+        }
+        showSelectionDialog(getString(R.string.text_340), strArr, i, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda25
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i3) {
+                MainActivity.this.lambda$showLayoutOrientationOptions$97(strArr2, i3);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showLayoutOrientationOptions$97(String[] strArr, int i) {
+        this.layoutOrientation = strArr[i];
+        this.printPreferences.edit().putString("layout_orientation", this.layoutOrientation).apply();
+        this.currentPreviewPage = 0;
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showPagesPerSheetOptions() {
+        final String[] strArr = {"2", "4", "6", "9", "16"};
+        int i = 0;
+        for (int i2 = 0; i2 < 5; i2++) {
+            if (Integer.parseInt(strArr[i2]) == this.pagesPerSheet) {
+                i = i2;
+            }
+        }
+        showSelectionDialog(getString(R.string.text_344), strArr, i, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda52
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i3) {
+                MainActivity.this.lambda$showPagesPerSheetOptions$98(strArr, i3);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showPagesPerSheetOptions$98(String[] strArr, int i) {
+        this.pagesPerSheet = Integer.parseInt(strArr[i]);
+        this.printPreferences.edit().putInt("pages_per_sheet", this.pagesPerSheet).apply();
+        this.currentPreviewPage = 0;
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showPaperSourceOptions() {
+        String[] strArr = {getString(R.string.text_314), getString(R.string.text_315), getString(R.string.text_316)};
+        final String[] strArr2 = {DebugKt.DEBUG_PROPERTY_VALUE_AUTO, "main", "priority"};
+        int i = 0;
+        for (int i2 = 0; i2 < 3; i2++) {
+            if (strArr2[i2].equals(this.paperSource)) {
+                i = i2;
+            }
+        }
+        showSelectionDialog(getString(R.string.text_359), strArr, i, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda84
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i3) {
+                MainActivity.this.lambda$showPaperSourceOptions$99(strArr2, i3);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showPaperSourceOptions$99(String[] strArr, int i) {
+        this.paperSource = strArr[i];
+        this.printPreferences.edit().putString("paper_source", this.paperSource).apply();
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showPosterOverlapOptions() {
+        int i = 2;
+        final int[] iArr = {0, 2, 5, 8, 10};
+        String[] strArr = {getString(R.string.text_374), getString(R.string.text_375), getString(R.string.text_376), getString(R.string.text_377), getString(R.string.text_378)};
+        for (int i2 = 0; i2 < 5; i2++) {
+            if (iArr[i2] == this.posterOverlapMm) {
+                i = i2;
+            }
+        }
+        showSelectionDialog(getString(R.string.text_353), strArr, i, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda97
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i3) {
+                MainActivity.this.lambda$showPosterOverlapOptions$100(iArr, i3);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showPosterOverlapOptions$100(int[] iArr, int i) {
+        this.posterOverlapMm = iArr[i];
+        this.printPreferences.edit().putInt("poster_overlap_mm", this.posterOverlapMm).apply();
+        this.currentPreviewPage = 0;
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showReadingOrderOptions() {
+        String[] strArr = {getString(R.string.text_379), getString(R.string.text_380)};
+        final String[] strArr2 = {"rtl", "ltr"};
+        boolean equals = "ltr".equals(this.readingOrder);
+        showNativeDialog(dialogBuilder().setTitle(getString(R.string.text_347)).setSingleChoiceItems(strArr, equals ? 1 : 0, new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda24
+            @Override // android.content.DialogInterface.OnClickListener
+            public final void onClick(DialogInterface dialogInterface, int i) {
+                MainActivity.this.lambda$showReadingOrderOptions$101(strArr2, dialogInterface, i);
+            }
+        }).setNegativeButton(getString(R.string.text_111), (DialogInterface.OnClickListener) null).create());
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showReadingOrderOptions$101(String[] strArr, DialogInterface dialogInterface, int i) {
+        this.readingOrder = strArr[i];
+        this.printPreferences.edit().putString("reading_order", this.readingOrder).apply();
+        dialogInterface.dismiss();
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showPosterScaleOptions() {
+        String[] strArr = {getString(R.string.text_381), getString(R.string.text_382), getString(R.string.text_383), getString(R.string.text_384), getString(R.string.text_385), getString(R.string.text_386)};
+        final float[] fArr = {100.0f, 150.0f, 200.0f, 250.0f, 300.0f, 400.0f};
+        int i = 1;
+        for (int i2 = 0; i2 < 6; i2++) {
+            if (Math.abs(fArr[i2] - this.posterScalePercent) < 0.5f) {
+                i = i2;
+            }
+        }
+        showNativeDialog(dialogBuilder().setTitle(getString(R.string.text_349)).setSingleChoiceItems(strArr, i, new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda80
+            @Override // android.content.DialogInterface.OnClickListener
+            public final void onClick(DialogInterface dialogInterface, int i3) {
+                MainActivity.this.lambda$showPosterScaleOptions$102(fArr, dialogInterface, i3);
+            }
+        }).setNegativeButton(getString(R.string.text_111), (DialogInterface.OnClickListener) null).create());
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showPosterScaleOptions$102(float[] fArr, DialogInterface dialogInterface, int i) {
+        this.posterScalePercent = fArr[i];
+        this.printPreferences.edit().putFloat("poster_scale_percent", this.posterScalePercent).apply();
+        dialogInterface.dismiss();
+        renderApp();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void showBindingOptions() {
+        String[] strArr = {getString(R.string.text_387), getString(R.string.text_251)};
+        final String[] strArr2 = {"right", "left"};
+        boolean equals = "left".equals(this.bookletBinding);
+        showSelectionDialog(getString(R.string.text_356), strArr, equals ? 1 : 0, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda82
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i) {
+                MainActivity.this.lambda$showBindingOptions$103(strArr2, i);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showBindingOptions$103(String[] strArr, int i) {
+        this.bookletBinding = strArr[i];
+        this.printPreferences.edit().putString("booklet_binding", this.bookletBinding).apply();
+        this.currentPreviewPage = 0;
+        renderApp();
+    }
+
+    private void showSourceTrayOptions(final boolean z) {
+        int length = this.paperSizes.length + 1;
+        final String[] strArr = new String[length];
+        int i = 0;
+        strArr[0] = getString(R.string.text_367);
+        String[] strArr2 = this.paperSizes;
+        System.arraycopy(strArr2, 0, strArr, 1, strArr2.length);
+        String str = z ? this.sourceMapMain : this.sourceMapPriority;
+        for (int i2 = 1; i2 < length; i2++) {
+            if (strArr[i2].equals(str)) {
+                i = i2;
+            }
+        }
+        showSelectionDialog(getString(z ? R.string.text_388 : R.string.text_389), strArr, i, new IndexAction() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda36
+            @Override // com.mohamedelnaggar.hpp1005.MainActivity.IndexAction
+            public final void onChosen(int i3) {
+                MainActivity.this.lambda$showSourceTrayOptions$104(strArr, z, i3);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showSourceTrayOptions$104(String[] strArr, boolean z, int i) {
+        String str = i == 0 ? "" : strArr[i];
+        if (z) {
+            this.sourceMapMain = str;
+            this.printPreferences.edit().putString("source_map_main", str).apply();
+        } else {
+            this.sourceMapPriority = str;
+            this.printPreferences.edit().putString("source_map_priority", str).apply();
+        }
+        renderApp();
     }
 
     private UsbDevice findConnectedPrinter() {
-        if (usbManager == null) return null;
-        for (UsbDevice device : usbManager.getDeviceList().values()) {
-            if (device.getVendorId() == 0x03F0 && device.getProductId() == 0x3D17) return device;
-        }
-        return null;
+        return UsbPrinterIO.findPrinter(this.usbManager);
     }
 
-    private void sendXqxFileToPrinter(File file, UsbDevice printer) throws Exception {
+    private void sendXqxFileToPrinter(File file, UsbDevice usbDevice) throws Exception {
+        lambda$append$117(getString(R.string.text_390) + UsbPrinterIO.sendXqx(this.usbManager, file, usbDevice) + getString(R.string.text_391));
+    }
+
+    private boolean hasPrinterConnected() {
+        Iterator<UsbDevice> it = this.usbManager.getDeviceList().values().iterator();
+        while (it.hasNext()) {
+            if (UsbPrinterIO.isP1005(it.next())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void scanDevices() {
+        clearLogWithHeader(getString(R.string.text_392));
+        HashMap<String, UsbDevice> deviceList = this.usbManager.getDeviceList();
+        lambda$append$117(getString(R.string.text_393) + deviceList.size());
+        if (deviceList.isEmpty()) {
+            lambda$append$117(getString(R.string.text_394));
+            return;
+        }
+        for (UsbDevice usbDevice : deviceList.values()) {
+            lambda$append$117(getString(R.string.text_395) + describe(usbDevice));
+            if (this.usbManager.hasPermission(usbDevice)) {
+                lambda$append$117(getString(R.string.text_396));
+                inspectDevice(usbDevice);
+            } else {
+                lambda$append$117(getString(R.string.text_397));
+                this.usbManager.requestPermission(usbDevice, this.permissionIntent);
+            }
+        }
+    }
+
+    @Override // androidx.activity.ComponentActivity, android.app.Activity
+    protected void onActivityResult(int i, int i2, Intent intent) {
+        super.onActivityResult(i, i2, intent);
+        if (i == 42 && i2 == -1 && intent != null && intent.getData() != null) {
+            loadSelectedDocument(intent.getData());
+            return;
+        }
+        if (i != 41 || i2 != -1 || intent == null || intent.getData() == null) {
+            return;
+        }
+        lambda$append$117(getString(R.string.text_398) + intent.getData().getLastPathSegment());
+        lambda$append$117(getString(R.string.text_399));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void verifyPrinterFirmware() {
+        verifyPrinterFirmware(null);
+    }
+
+    private void verifyPrinterFirmware(final UsbResultCallback usbResultCallback) {
+        UsbDevice foundDevice = null;
+        for (UsbDevice candidate : this.usbManager.getDeviceList().values()) {
+            if (candidate.getVendorId() == 1008 && candidate.getProductId() == 15639) {
+                foundDevice = candidate;
+                break;
+            }
+        }
+        final UsbDevice usbDevice = foundDevice;
+        if (usbDevice == null) {
+            lambda$append$117(getString(R.string.text_400));
+            if (usbResultCallback != null) {
+                usbResultCallback.onResult(false, getString(R.string.text_401));
+                return;
+            }
+            return;
+        }
+        if (!this.usbManager.hasPermission(usbDevice)) {
+            lambda$append$117(getString(R.string.text_402));
+            if (usbResultCallback != null) {
+                usbResultCallback.onResult(false, getString(R.string.text_403));
+                return;
+            }
+            return;
+        }
+        new Thread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda78
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$verifyPrinterFirmware$107(usbDevice, usbResultCallback);
+            }
+        }, "P1005-Firmware-Verify").start();
+        lambda$append$117(getString(R.string.text_412));
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$verifyPrinterFirmware$107(UsbDevice usbDevice, final UsbResultCallback usbResultCallback) {
+        int i;
+        String str;
+        UsbDeviceConnection usbDeviceConnection = null;
+        try {
+            try {
+                usbDeviceConnection = this.usbManager.openDevice(usbDevice);
+            } catch (Exception e) {
+                final String str2 = e.getClass().getSimpleName() + ": " + e.getMessage();
+                runOnUiThread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda129
+                    @Override // java.lang.Runnable
+                    public final void run() {
+                        MainActivity.this.lambda$verifyPrinterFirmware$106(str2, usbResultCallback);
+                    }
+                });
+                if (0 == 0) {
+                    return;
+                }
+            }
+            if (usbDeviceConnection == null) {
+                throw new IllegalStateException(getString(R.string.text_404));
+            }
+            int i2 = 0;
+            while (true) {
+                if (i2 >= usbDevice.getInterfaceCount()) {
+                    i = -1;
+                    break;
+                } else {
+                    if (usbDevice.getInterface(i2).getInterfaceClass() == 7) {
+                        i = usbDevice.getInterface(i2).getId();
+                        break;
+                    }
+                    i2++;
+                }
+            }
+            int i3 = i;
+            if (i3 < 0) {
+                throw new IllegalStateException(getString(R.string.text_405));
+            }
+            byte[] bArr = new byte[1024];
+            int controlTransfer = usbDeviceConnection.controlTransfer(161, 0, 0, i3, bArr, 1024, 3000);
+            if (controlTransfer < 2) {
+                throw new IllegalStateException(getString(R.string.text_406) + controlTransfer + ").");
+            }
+            final String str3 = new String(bArr, 2, Math.min(Math.max(0, (((bArr[0] & UByte.MAX_VALUE) << 8) | (bArr[1] & UByte.MAX_VALUE)) - 2), controlTransfer - 2), StandardCharsets.US_ASCII);
+            final boolean contains = str3.contains("FWVER:");
+            if (contains) {
+                str = getString(R.string.text_407) + str3 + getString(R.string.text_408);
+            } else {
+                str = getString(R.string.text_409) + str3 + getString(R.string.text_410);
+            }
+            final String str4 = str;
+            runOnUiThread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda128
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$verifyPrinterFirmware$105(str4, usbResultCallback, contains, str3);
+                }
+            });
+            if (usbDeviceConnection != null) {
+                usbDeviceConnection.close();
+            }
+        } catch (Throwable th) {
+            if (0 != 0) {
+                usbDeviceConnection.close();
+            }
+            throw th;
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$verifyPrinterFirmware$105(String str, UsbResultCallback usbResultCallback, boolean z, String str2) {
+        lambda$append$117(str);
+        if (usbResultCallback != null) {
+            usbResultCallback.onResult(z, str2);
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$verifyPrinterFirmware$106(String str, UsbResultCallback usbResultCallback) {
+        lambda$append$117(getString(R.string.text_411) + str);
+        if (usbResultCallback != null) {
+            usbResultCallback.onResult(false, str);
+        }
+    }
+
+    private void printBuiltInTestPage() {
+        UsbDevice foundDevice = null;
+        for (UsbDevice candidate : this.usbManager.getDeviceList().values()) {
+            if (candidate.getVendorId() == 1008 && candidate.getProductId() == 15639) {
+                foundDevice = candidate;
+                break;
+            }
+        }
+        final UsbDevice usbDevice = foundDevice;
+        if (usbDevice == null) {
+            lambda$append$117(getString(R.string.text_413));
+        } else if (!this.usbManager.hasPermission(usbDevice)) {
+            lambda$append$117(getString(R.string.text_414));
+        } else {
+            new Thread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda79
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$printBuiltInTestPage$110(usbDevice);
+                }
+            }, "P1005-Test-Print").start();
+            lambda$append$117(getString(R.string.text_422));
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$printBuiltInTestPage$110(UsbDevice usbDevice) {
         UsbDeviceConnection connection = null;
         UsbInterface printerInterface = null;
         boolean claimed = false;
         try {
-            connection = usbManager.openDevice(printer);
-            if (connection == null) throw new IllegalStateException("تعذّر على أندرويد فتح طابعة USB.");
-            UsbEndpoint outEndpoint = null;
-            for (int i = 0; i < printer.getInterfaceCount(); i++) {
-                UsbInterface candidate = printer.getInterface(i);
-                if (candidate.getInterfaceClass() == UsbConstants.USB_CLASS_PRINTER) {
+            InputStream openRawResource = getResources().openRawResource(R.raw.p1005_test_page);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            byte[] bArr = new byte[8192];
+            while (true) {
+                int read = openRawResource.read(bArr);
+                if (read == -1) {
+                    break;
+                }
+                byteArrayOutputStream.write(bArr, 0, read);
+            }
+            openRawResource.close();
+            byte[] byteArray = byteArrayOutputStream.toByteArray();
+            if (byteArray.length < 16) {
+                throw new IllegalStateException(getString(R.string.text_415));
+            }
+            connection = this.usbManager.openDevice(usbDevice);
+            if (connection == null) {
+                throw new IllegalStateException(getString(R.string.text_416));
+            }
+            for (int i2 = 0; i2 < usbDevice.getInterfaceCount(); i2++) {
+                UsbInterface candidate = usbDevice.getInterface(i2);
+                if (candidate.getInterfaceClass() == 7) {
                     printerInterface = candidate;
                     break;
                 }
             }
-            if (printerInterface == null) throw new IllegalStateException("لم يُعثر على واجهة من فئة الطابعات USB.");
+            if (printerInterface == null) {
+                throw new IllegalStateException(getString(R.string.text_001));
+            }
             claimed = connection.claimInterface(printerInterface, true);
-            if (!claimed) throw new IllegalStateException("تعذّر حجز واجهة الطابعة.");
-            for (int i = 0; i < printerInterface.getEndpointCount(); i++) {
-                UsbEndpoint endpoint = printerInterface.getEndpoint(i);
-                if (endpoint.getDirection() == UsbConstants.USB_DIR_OUT
-                        && endpoint.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK) {
-                    outEndpoint = endpoint;
+            if (!claimed) {
+                throw new IllegalStateException(getString(R.string.text_002));
+            }
+            UsbEndpoint usbEndpoint = null;
+            for (int i3 = 0; i3 < printerInterface.getEndpointCount(); i3++) {
+                UsbEndpoint endpoint = printerInterface.getEndpoint(i3);
+                if (endpoint.getDirection() == 0 && endpoint.getType() == 2) {
+                    usbEndpoint = endpoint;
                     break;
                 }
             }
-            if (outEndpoint == null) throw new IllegalStateException("لم يُعثر على منفذ bulk OUT.");
-            byte[] buffer = new byte[16 * 1024];
-            int sentTotal = 0;
-            try (FileInputStream input = new FileInputStream(file)) {
-                int read;
-                while ((read = input.read(buffer)) != -1) {
-                    int offset = 0;
-                    while (offset < read) {
-                        int sent = connection.bulkTransfer(outEndpoint, buffer, offset,
-                                read - offset, 10000);
-                        if (sent <= 0) throw new IllegalStateException("توقّف نقل USB بعد " + sentTotal + " بايت (result=" + sent + ").");
-                        sentTotal += sent;
-                        offset += sent;
-                    }
-                }
+            if (usbEndpoint == null) {
+                throw new IllegalStateException(getString(R.string.text_003));
             }
-            append("قبل USB " + sentTotal + " بايت XQX لصفحة مستند. تأكد من خروجها فعليًا من الطابعة.");
+            int i = 0;
+            while (i < byteArray.length) {
+                int bulkTransfer = connection.bulkTransfer(usbEndpoint, byteArray, i, Math.min(16384, byteArray.length - i), 10000);
+                if (bulkTransfer <= 0) {
+                    throw new IllegalStateException(getString(R.string.text_417) + i + getString(R.string.text_016) + byteArray.length + getString(R.string.text_418) + bulkTransfer + ").");
+                }
+                i += bulkTransfer;
+            }
+            final int sentTotal = i;
+            runOnUiThread(new Runnable() {
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$printBuiltInTestPage$108(sentTotal);
+                }
+            });
+        } catch (Exception e) {
+            final String str = e.getClass().getSimpleName() + ": " + e.getMessage();
+            runOnUiThread(new Runnable() {
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$printBuiltInTestPage$109(str);
+                }
+            });
         } finally {
             if (connection != null) {
                 if (claimed && printerInterface != null) {
-                    try { connection.releaseInterface(printerInterface); } catch (Exception ignored) {}
+                    try {
+                        connection.releaseInterface(printerInterface);
+                    } catch (Exception unused) {
+                    }
                 }
                 connection.close();
             }
         }
     }
 
-    private boolean hasPrinterConnected() {
-        for (UsbDevice device : usbManager.getDeviceList().values()) {
-            if (device.getVendorId() == 0x03F0 && device.getProductId() == 0x3D17) return true;
-        }
-        return false;
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$printBuiltInTestPage$108(int i) {
+        lambda$append$117(getString(R.string.text_419) + i + getString(R.string.text_420));
     }
 
-    private void scanDevices() {
-        clearLogWithHeader("سجل تشخيص USB");
-        HashMap<String, UsbDevice> devices = usbManager.getDeviceList();
-        append("الأجهزة المكتشفة: " + devices.size());
-        if (devices.isEmpty()) {
-            append("لم يُكتشف أي جهاز USB. تحقق من دعم OTG والمحوّل والكابل وتشغيل الطابعة.");
-            return;
-        }
-        for (UsbDevice device : devices.values()) {
-            append("وُجد: " + describe(device));
-            if (usbManager.hasPermission(device)) {
-                append("الإذن مُنح مسبقًا.");
-                inspectDevice(device);
-            } else {
-                append("جارٍ طلب إذن USB...");
-                usbManager.requestPermission(device, permissionIntent);
-            }
-        }
-    }
-
-    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_DOCUMENT && resultCode == RESULT_OK && data != null && data.getData() != null) {
-            loadSelectedDocument(data.getData());
-        } else if (requestCode == 41 && resultCode == RESULT_OK && data != null && data.getData() != null) {
-            append("حُدّد ملف برنامج ثابت: " + data.getData().getLastPathSegment());
-            append("تحديد فقط. تحقق أن هذا هو ملف sihpP1005.dl الصحيح قبل أي نقل.");
-        }
-    }
-
-    private void verifyPrinterFirmware() {
-        verifyPrinterFirmware(null);
-    }
-
-    private void verifyPrinterFirmware(UsbResultCallback callback) {
-        HashMap<String, UsbDevice> devices = usbManager.getDeviceList();
-        UsbDevice printer = null;
-        for (UsbDevice device : devices.values()) {
-            if (device.getVendorId() == 0x03F0 && device.getProductId() == 0x3D17) {
-                printer = device;
-                break;
-            }
-        }
-        if (printer == null) {
-            append("تعذّر التحقق من البرنامج الثابت: لم يُعثر على HP P1005 (VID 03F0، PID 3D17).");
-            if (callback != null) callback.onResult(false, "لا توجد طابعة متصلة");
-            return;
-        }
-        if (!usbManager.hasPermission(printer)) {
-            append("توقّف التحقق من البرنامج الثابت: إذن USB غير ممنوح. افحص أجهزة USB أولاً.");
-            if (callback != null) callback.onResult(false, "إذن USB غير ممنوح");
-            return;
-        }
-        final UsbDevice target = printer;
-        new Thread(() -> {
-            UsbDeviceConnection connection = null;
-            try {
-                connection = usbManager.openDevice(target);
-                if (connection == null) throw new IllegalStateException("تعذّر فتح جهاز USB.");
-                int printerInterfaceId = -1;
-                for (int i = 0; i < target.getInterfaceCount(); i++) {
-                    if (target.getInterface(i).getInterfaceClass() == UsbConstants.USB_CLASS_PRINTER) {
-                        printerInterfaceId = target.getInterface(i).getId();
-                        break;
-                    }
-                }
-                if (printerInterfaceId < 0) throw new IllegalStateException("لم يُعثر على واجهة الطابعة.");
-
-                byte[] response = new byte[1024];
-                int count = connection.controlTransfer(0xA1, 0, 0, printerInterfaceId,
-                        response, response.length, 3000);
-                if (count < 2) throw new IllegalStateException("لم تُرجع الطابعة معرّف جهاز USB (result=" + count + ").");
-
-                int declaredLength = ((response[0] & 0xFF) << 8) | (response[1] & 0xFF);
-                int actualLength = Math.min(Math.max(0, declaredLength - 2), count - 2);
-                String deviceId = new String(response, 2, actualLength, java.nio.charset.StandardCharsets.US_ASCII);
-                final boolean firmwareFound = deviceId.contains("FWVER:");
-                final String result;
-                if (firmwareFound) {
-                    result = "أعادت الطابعة معرّف الجهاز مع إصدار البرنامج الثابت:\n" + deviceId
-                            + "\nهذا دليل قوي على أن البرنامج الثابت محمّل. لا يثبت بعد نجاح الطباعة.";
-                } else {
-                    result = "أعادت الطابعة معرّف الجهاز دون حقل FWVER:\n" + deviceId
-                            + "\nحالة البرنامج الثابت غير مؤكدة؛ لا تُعد التحميل بشكل متكرر بعد.";
-                }
-                runOnUiThread(() -> {
-                    append(result);
-                    if (callback != null) callback.onResult(firmwareFound, deviceId);
-                });
-            } catch (Exception e) {
-                final String error = e.getClass().getSimpleName() + ": " + e.getMessage();
-                runOnUiThread(() -> {
-                    append("تعذّر التحقق من البرنامج الثابت: " + error);
-                    if (callback != null) callback.onResult(false, error);
-                });
-            } finally {
-                if (connection != null) connection.close();
-            }
-        }, "P1005-Firmware-Verify").start();
-        append("جارٍ قراءة معرّف جهاز USB وإصدار البرنامج الثابت...");
-    }
-
-    private void printBuiltInTestPage() {
-        HashMap<String, UsbDevice> devices = usbManager.getDeviceList();
-        UsbDevice printer = null;
-        for (UsbDevice device : devices.values()) {
-            if (device.getVendorId() == 0x03F0 && device.getProductId() == 0x3D17) {
-                printer = device;
-                break;
-            }
-        }
-        if (printer == null) {
-            append("توقّفت الطباعة التجريبية: لم يُعثر على طابعة HP P1005 (VID 03F0، PID 3D17).");
-            return;
-        }
-        if (!usbManager.hasPermission(printer)) {
-            append("توقّفت الطباعة التجريبية: إذن USB غير ممنوح. افحص أجهزة USB أولاً.");
-            return;
-        }
-
-        final UsbDevice target = printer;
-        new Thread(() -> {
-            UsbDeviceConnection connection = null;
-            UsbInterface printerInterface = null;
-            boolean claimed = false;
-            try {
-                java.io.InputStream input = getResources().openRawResource(R.raw.p1005_test_page);
-                java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
-                byte[] readBuffer = new byte[8192];
-                int n;
-                while ((n = input.read(readBuffer)) != -1) buffer.write(readBuffer, 0, n);
-                input.close();
-                byte[] jobBytes = buffer.toByteArray();
-                if (jobBytes.length < 16) throw new IllegalStateException("مهمة الطباعة المدمجة مفقودة أو صغيرة جدًا.");
-
-                connection = usbManager.openDevice(target);
-                if (connection == null) throw new IllegalStateException("تعذّر على أندرويد فتح جهاز USB.");
-
-                UsbEndpoint outEndpoint = null;
-                for (int i = 0; i < target.getInterfaceCount(); i++) {
-                    UsbInterface candidate = target.getInterface(i);
-                    if (candidate.getInterfaceClass() == UsbConstants.USB_CLASS_PRINTER) {
-                        printerInterface = candidate;
-                        break;
-                    }
-                }
-                if (printerInterface == null) throw new IllegalStateException("لم يُعثر على واجهة من فئة الطابعات USB.");
-                claimed = connection.claimInterface(printerInterface, true);
-                if (!claimed) throw new IllegalStateException("تعذّر حجز واجهة الطابعة.");
-
-                for (int i = 0; i < printerInterface.getEndpointCount(); i++) {
-                    UsbEndpoint ep = printerInterface.getEndpoint(i);
-                    if (ep.getDirection() == UsbConstants.USB_DIR_OUT
-                            && ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK) {
-                        outEndpoint = ep;
-                        break;
-                    }
-                }
-                if (outEndpoint == null) throw new IllegalStateException("لم يُعثر على منفذ bulk OUT.");
-
-                int sentTotal = 0;
-                final int chunkSize = 16 * 1024;
-                while (sentTotal < jobBytes.length) {
-                    int length = Math.min(chunkSize, jobBytes.length - sentTotal);
-                    int sent = connection.bulkTransfer(outEndpoint, jobBytes, sentTotal, length, 10000);
-                    if (sent <= 0) {
-                        throw new IllegalStateException("توقّف نقل USB عند " + sentTotal
-                                + " من " + jobBytes.length + " بايت (bulkTransfer=" + sent + ").");
-                    }
-                    sentTotal += sent;
-                }
-                final int total = sentTotal;
-                runOnUiThread(() -> append("أُرسل تدفق الصفحة التجريبية: " + total
-                        + " بايت. قبل USB البيانات؛ تحقق من خروج الصفحة فعليًا من الطابعة."));
-            } catch (Exception e) {
-                final String error = e.getClass().getSimpleName() + ": " + e.getMessage();
-                runOnUiThread(() -> append("فشلت الطباعة التجريبية: " + error));
-            } finally {
-                if (connection != null) {
-                    if (claimed && printerInterface != null) {
-                        try { connection.releaseInterface(printerInterface); } catch (Exception ignored) {}
-                    }
-                    connection.close();
-                }
-            }
-        }, "P1005-Test-Print").start();
-        append("تجهيز صفحة اختبار XQX مدمجة. لا تفصل الطابعة أثناء النقل.");
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$printBuiltInTestPage$109(String str) {
+        lambda$append$117(getString(R.string.text_421) + str);
     }
 
     private void loadBuiltInFirmware() {
         loadBuiltInFirmware(null);
     }
 
-    private void loadBuiltInFirmware(UsbResultCallback callback) {
-        HashMap<String, UsbDevice> devices = usbManager.getDeviceList();
-        UsbDevice printer = null;
-        for (UsbDevice device : devices.values()) {
-            if (device.getVendorId() == 0x03F0 && device.getProductId() == 0x3D17) {
-                printer = device;
+    private void loadBuiltInFirmware(final UsbResultCallback usbResultCallback) {
+        UsbDevice foundDevice = null;
+        for (UsbDevice candidate : this.usbManager.getDeviceList().values()) {
+            if (candidate.getVendorId() == 1008 && candidate.getProductId() == 15639) {
+                foundDevice = candidate;
                 break;
             }
         }
-        if (printer == null) {
-            append("توقّف نقل البرنامج الثابت: لم يُعثر على طابعة HP P1005 (VID 03F0، PID 3D17).");
-            if (callback != null) callback.onResult(false, "لا توجد طابعة متصلة");
+        final UsbDevice usbDevice = foundDevice;
+        if (usbDevice == null) {
+            lambda$append$117(getString(R.string.text_423));
+            if (usbResultCallback != null) {
+                usbResultCallback.onResult(false, getString(R.string.text_401));
+                return;
+            }
             return;
         }
-        if (!usbManager.hasPermission(printer)) {
-            append("توقّف نقل البرنامج الثابت: إذن USB غير ممنوح. افحص أجهزة USB أولاً.");
-            if (callback != null) callback.onResult(false, "إذن USB غير ممنوح");
+        if (!this.usbManager.hasPermission(usbDevice)) {
+            lambda$append$117(getString(R.string.text_424));
+            if (usbResultCallback != null) {
+                usbResultCallback.onResult(false, getString(R.string.text_403));
+                return;
+            }
             return;
         }
-
-        final UsbDevice target = printer;
-        new Thread(() -> {
-            UsbDeviceConnection connection = null;
-            UsbInterface printerInterface = null;
-            boolean claimed = false;
-            try {
-                java.io.InputStream input = getResources().openRawResource(R.raw.sihpp1005);
-                java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
-                byte[] readBuffer = new byte[8192];
-                int n;
-                while ((n = input.read(readBuffer)) != -1) buffer.write(readBuffer, 0, n);
-                input.close();
-                byte[] firmwareBytes = buffer.toByteArray();
-                if (firmwareBytes.length == 0) throw new IllegalStateException("مورد البرنامج الثابت المدمج فارغ.");
-
-                connection = usbManager.openDevice(target);
-                if (connection == null) throw new IllegalStateException("تعذّر على أندرويد فتح جهاز USB.");
-
-                UsbEndpoint outEndpoint = null;
-                for (int i = 0; i < target.getInterfaceCount(); i++) {
-                    UsbInterface candidate = target.getInterface(i);
-                    if (candidate.getInterfaceClass() == UsbConstants.USB_CLASS_PRINTER) {
-                        printerInterface = candidate;
-                        break;
-                    }
-                }
-                if (printerInterface == null) throw new IllegalStateException("لم يُعثر على واجهة من فئة الطابعات USB.");
-                claimed = connection.claimInterface(printerInterface, true);
-                if (!claimed) throw new IllegalStateException("تعذّر حجز واجهة الطابعة.");
-
-                for (int i = 0; i < printerInterface.getEndpointCount(); i++) {
-                    UsbEndpoint ep = printerInterface.getEndpoint(i);
-                    if (ep.getDirection() == UsbConstants.USB_DIR_OUT
-                            && ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK) {
-                        outEndpoint = ep;
-                        break;
-                    }
-                }
-                if (outEndpoint == null) throw new IllegalStateException("لم يُعثر على منفذ bulk OUT.");
-
-                final int chunkSize = 16 * 1024;
-                int sentTotal = 0;
-                while (sentTotal < firmwareBytes.length) {
-                    int length = Math.min(chunkSize, firmwareBytes.length - sentTotal);
-                    int sent = connection.bulkTransfer(outEndpoint, firmwareBytes, sentTotal, length, 10000);
-                    if (sent <= 0) {
-                        throw new IllegalStateException("توقّف نقل USB عند " + sentTotal
-                                + " من " + firmwareBytes.length + " بايت (bulkTransfer=" + sent + ").");
-                    }
-                    sentTotal += sent;
-                }
-                final int total = sentTotal;
-                runOnUiThread(() -> {
-                    append("أُرسلت بيانات البرنامج الثابت إلى منفذ USB: " + total
-                            + " بايت. هذا يؤكد قبول USB للنقل فقط، لا نجاح التحميل أو الطباعة.");
-                    if (callback != null) callback.onResult(true, String.valueOf(total));
-                });
-            } catch (Exception e) {
-                final String error = e.getClass().getSimpleName() + ": " + e.getMessage();
-                runOnUiThread(() -> {
-                    append("فشل نقل البرنامج الثابت: " + error);
-                    if (callback != null) callback.onResult(false, error);
-                });
-            } finally {
-                if (connection != null) {
-                    if (claimed && printerInterface != null) {
-                        try { connection.releaseInterface(printerInterface); } catch (Exception ignored) {}
-                    }
-                    connection.close();
-                }
+        new Thread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda81
+            @Override // java.lang.Runnable
+            public final void run() {
+                MainActivity.this.lambda$loadBuiltInFirmware$113(usbDevice, usbResultCallback);
             }
         }, "P1005-Firmware-Transfer").start();
-        append("بدء نقل البرنامج الثابت إلى الطابعة المكتشفة. لا تفصل الطابعة ولا تطفئها.");
+        lambda$append$117(getString(R.string.text_429));
     }
 
-    private void selectFirmwareFile() {
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$loadBuiltInFirmware$113(UsbDevice usbDevice, final UsbResultCallback usbResultCallback) {
+        UsbDeviceConnection connection = null;
+        UsbInterface printerInterface = null;
+        boolean claimed = false;
         try {
-            Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            pick.setType("*/*");
-            pick.addCategory(Intent.CATEGORY_OPENABLE);
-            startActivityForResult(pick, 41);
-        } catch (Exception e) {
-            append("تعذّر فتح منتقي الملفات: " + e.getMessage());
-        }
-    }
-
-    private void requestFirmwareLoad() {
-        if (!confirmFirmwareLoad) {
-            loadBuiltInFirmware();
-            return;
-        }
-        AlertDialog dialog = dialogBuilder()
-                .setTitle("تحميل البرنامج الثابت المدمج؟")
-                .setMessage("سيُرسَل البرنامج الثابت المدمج الخاص بطابعة HP P1005 عبر USB. قد يلزم ذلك بعد كل دورة تشغيل للطابعة. لا تفصل الطابعة ولا تطفئها أثناء النقل. قبول USB للبيانات لا يثبت نجاح تحميل البرنامج الثابت.")
-                .setNegativeButton("إلغاء", (d, which) -> d.dismiss())
-                .setPositiveButton("متابعة", (d, which) -> loadBuiltInFirmware())
-                .create();
-        showNativeDialog(dialog);
-    }
-
-    private void showNativeDialog(AlertDialog dialog) {
-        dialog.setOnShowListener(ignored -> {
-            Window window = dialog.getWindow();
-            if (window != null) {
-                window.getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-                window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
-                window.setDimAmount(0.18f);
-                window.setBackgroundDrawable(new ColorDrawable(darkMode ? 0xF21D1D21 : 0xF2FFFFFF));
-                // Dim only, no blur-behind (see styleDialogWindow).
+            InputStream openRawResource = getResources().openRawResource(R.raw.sihpp1005);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            byte[] bArr = new byte[8192];
+            while (true) {
+                int read = openRawResource.read(bArr);
+                if (read == -1) {
+                    break;
+                }
+                byteArrayOutputStream.write(bArr, 0, read);
             }
-            int buttonColor = primaryColor();
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(buttonColor);
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(buttonColor);
-            TextView message = dialog.findViewById(android.R.id.message);
-            if (message != null) message.setTextColor(textPrimary());
-            int titleId = getResources().getIdentifier("alertTitle", "id", "android");
-            TextView alertTitle = titleId == 0 ? null : dialog.findViewById(titleId);
-            if (alertTitle != null) alertTitle.setTextColor(textPrimary());
+            openRawResource.close();
+            byte[] byteArray = byteArrayOutputStream.toByteArray();
+            if (byteArray.length == 0) {
+                throw new IllegalStateException(getString(R.string.text_425));
+            }
+            connection = this.usbManager.openDevice(usbDevice);
+            if (connection == null) {
+                throw new IllegalStateException(getString(R.string.text_416));
+            }
+            for (int i2 = 0; i2 < usbDevice.getInterfaceCount(); i2++) {
+                UsbInterface candidate = usbDevice.getInterface(i2);
+                if (candidate.getInterfaceClass() == 7) {
+                    printerInterface = candidate;
+                    break;
+                }
+            }
+            if (printerInterface == null) {
+                throw new IllegalStateException(getString(R.string.text_001));
+            }
+            claimed = connection.claimInterface(printerInterface, true);
+            if (!claimed) {
+                throw new IllegalStateException(getString(R.string.text_002));
+            }
+            UsbEndpoint usbEndpoint = null;
+            for (int i3 = 0; i3 < printerInterface.getEndpointCount(); i3++) {
+                UsbEndpoint endpoint = printerInterface.getEndpoint(i3);
+                if (endpoint.getDirection() == 0 && endpoint.getType() == 2) {
+                    usbEndpoint = endpoint;
+                    break;
+                }
+            }
+            if (usbEndpoint == null) {
+                throw new IllegalStateException(getString(R.string.text_003));
+            }
+            int i = 0;
+            while (i < byteArray.length) {
+                int bulkTransfer = connection.bulkTransfer(usbEndpoint, byteArray, i, Math.min(16384, byteArray.length - i), 10000);
+                if (bulkTransfer <= 0) {
+                    throw new IllegalStateException(getString(R.string.text_417) + i + getString(R.string.text_016) + byteArray.length + getString(R.string.text_418) + bulkTransfer + ").");
+                }
+                i += bulkTransfer;
+            }
+            final int sentTotal = i;
+            runOnUiThread(new Runnable() {
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$loadBuiltInFirmware$111(sentTotal, usbResultCallback);
+                }
+            });
+        } catch (Exception e) {
+            final String str = e.getClass().getSimpleName() + ": " + e.getMessage();
+            runOnUiThread(new Runnable() {
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$loadBuiltInFirmware$112(str, usbResultCallback);
+                }
+            });
+        } finally {
+            if (connection != null) {
+                if (claimed && printerInterface != null) {
+                    try {
+                        connection.releaseInterface(printerInterface);
+                    } catch (Exception unused) {
+                    }
+                }
+                connection.close();
+            }
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$loadBuiltInFirmware$111(int i, UsbResultCallback usbResultCallback) {
+        lambda$append$117(getString(R.string.text_426) + i + getString(R.string.text_427));
+        if (usbResultCallback != null) {
+            usbResultCallback.onResult(true, String.valueOf(i));
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$loadBuiltInFirmware$112(String str, UsbResultCallback usbResultCallback) {
+        lambda$append$117(getString(R.string.text_428) + str);
+        if (usbResultCallback != null) {
+            usbResultCallback.onResult(false, str);
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void selectFirmwareFile() {
+        try {
+            Intent intent = new Intent("android.intent.action.OPEN_DOCUMENT");
+            intent.setType("*/*");
+            intent.addCategory("android.intent.category.OPENABLE");
+            startActivityForResult(intent, 41);
+        } catch (Exception e) {
+            lambda$append$117(getString(R.string.text_430) + e.getMessage());
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void requestFirmwareLoad() {
+        if (!this.confirmFirmwareLoad) {
+            loadBuiltInFirmware();
+        } else {
+            showNativeDialog(dialogBuilder().setTitle(getString(R.string.text_431)).setMessage(getString(R.string.text_432)).setNegativeButton(getString(R.string.text_111), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda22
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    dialogInterface.dismiss();
+                }
+            }).setPositiveButton(getString(R.string.text_433), new DialogInterface.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda23
+                @Override // android.content.DialogInterface.OnClickListener
+                public final void onClick(DialogInterface dialogInterface, int i) {
+                    MainActivity.this.lambda$requestFirmwareLoad$115(dialogInterface, i);
+                }
+            }).create());
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$requestFirmwareLoad$115(DialogInterface dialogInterface, int i) {
+        loadBuiltInFirmware();
+    }
+
+    private void showNativeDialog(final AlertDialog alertDialog) {
+        Window window = alertDialog.getWindow();
+        if (window != null) {
+            window.getDecorView().setLayoutDirection(appDirection());
+            window.addFlags(2);
+            window.setDimAmount(0.45f);
+            window.setBackgroundDrawable(new ColorDrawable(this.darkMode ? -232973023 : -218103809));
+        }
+        alertDialog.setOnShowListener(new DialogInterface.OnShowListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda125
+            @Override // android.content.DialogInterface.OnShowListener
+            public final void onShow(DialogInterface dialogInterface) {
+                MainActivity.this.lambda$showNativeDialog$116(alertDialog, dialogInterface);
+            }
         });
-        dialog.show();
+        alertDialog.show();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showNativeDialog$116(AlertDialog alertDialog, DialogInterface dialogInterface) {
+        int primaryColor = primaryColor();
+        alertDialog.getButton(-1).setTextColor(primaryColor);
+        alertDialog.getButton(-2).setTextColor(primaryColor);
+        TextView textView = (TextView) alertDialog.findViewById(android.R.id.message);
+        if (textView != null) {
+            textView.setTextColor(textPrimary());
+        }
+        int identifier = getResources().getIdentifier("alertTitle", "id", "android");
+        TextView textView2 = identifier == 0 ? null : (TextView) alertDialog.findViewById(identifier);
+        if (textView2 != null) {
+            textView2.setTextColor(textPrimary());
+        }
     }
 
     private void copyActivityLog() {
-        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        if (clipboard != null) {
-            clipboard.setPrimaryClip(ClipData.newPlainText("سجل نشاط HP P1005", activityLog.toString()));
-            systemToast("نُسخ سجل النشاط", Toast.LENGTH_SHORT).show();
+        ClipboardManager clipboardManager = (ClipboardManager) getSystemService("clipboard");
+        if (clipboardManager != null) {
+            clipboardManager.setPrimaryClip(ClipData.newPlainText(getString(R.string.text_050), this.activityLog.toString()));
+            systemToast(getString(R.string.text_434), 0).show();
         }
     }
 
     private void clearActivityLog() {
-        activityLog.setLength(0);
-        activityLog.append("سجل نشاط HP P1005\nمُسح السجل.\n");
-        if (output != null) output.setText(activityLog.toString());
+        this.activityLog.setLength(0);
+        this.activityLog.append(getString(R.string.text_435));
+        TextView textView = this.output;
+        if (textView != null) {
+            textView.setText(this.activityLog.toString());
+        }
     }
 
-    private String describe(UsbDevice d) {
-        return d.getDeviceName()
-                + " | VID=0x" + hex(d.getVendorId())
-                + " PID=0x" + hex(d.getProductId())
-                + " | class=" + d.getDeviceClass()
-                + " subclass=" + d.getDeviceSubclass()
-                + " protocol=" + d.getDeviceProtocol()
-                + " | interfaces=" + d.getInterfaceCount();
+    /* JADX INFO: Access modifiers changed from: private */
+    public String describe(UsbDevice usbDevice) {
+        return usbDevice.getDeviceName() + " | VID=0x" + hex(usbDevice.getVendorId()) + " PID=0x" + hex(usbDevice.getProductId()) + " | class=" + usbDevice.getDeviceClass() + " subclass=" + usbDevice.getDeviceSubclass() + " protocol=" + usbDevice.getDeviceProtocol() + " | interfaces=" + usbDevice.getInterfaceCount();
     }
 
-    private String hex(int value) { return String.format("%04X", value); }
+    private String hex(int i) {
+        return String.format("%04X", Integer.valueOf(i));
+    }
 
-    private void inspectDevice(UsbDevice device) {
-        append("فحص الواجهات ونقاط النهاية:");
-        for (int i = 0; i < device.getInterfaceCount(); i++) {
-            UsbInterface usbInterface = device.getInterface(i);
-            append(" واجهة " + i + ": class=" + usbInterface.getInterfaceClass()
-                    + " subclass=" + usbInterface.getInterfaceSubclass()
-                    + " protocol=" + usbInterface.getInterfaceProtocol()
-                    + " endpoints=" + usbInterface.getEndpointCount());
-            for (int j = 0; j < usbInterface.getEndpointCount(); j++) {
-                UsbEndpoint ep = usbInterface.getEndpoint(j);
-                String direction = ep.getDirection() == UsbConstants.USB_DIR_OUT ? "OUT"
-                        : ep.getDirection() == UsbConstants.USB_DIR_IN ? "IN" : "OTHER";
-                append("  نقطة نهاية " + j + ": address=0x" + hex(ep.getAddress())
-                        + " direction=" + direction
-                        + " type=" + ep.getType()
-                        + " maxPacket=" + ep.getMaxPacketSize());
+    /* JADX INFO: Access modifiers changed from: private */
+    public void inspectDevice(UsbDevice usbDevice) {
+        String str;
+        lambda$append$117(getString(R.string.text_436));
+        for (int i = 0; i < usbDevice.getInterfaceCount(); i++) {
+            UsbInterface usbInterface = usbDevice.getInterface(i);
+            lambda$append$117(getString(R.string.text_437) + i + ": class=" + usbInterface.getInterfaceClass() + " subclass=" + usbInterface.getInterfaceSubclass() + " protocol=" + usbInterface.getInterfaceProtocol() + " endpoints=" + usbInterface.getEndpointCount());
+            for (int i2 = 0; i2 < usbInterface.getEndpointCount(); i2++) {
+                UsbEndpoint endpoint = usbInterface.getEndpoint(i2);
+                if (endpoint.getDirection() == 0) {
+                    str = "OUT";
+                } else {
+                    str = endpoint.getDirection() == 128 ? "IN" : "OTHER";
+                }
+                lambda$append$117(getString(R.string.text_438) + i2 + ": address=0x" + hex(endpoint.getAddress()) + " direction=" + str + " type=" + endpoint.getType() + " maxPacket=" + endpoint.getMaxPacketSize());
             }
         }
-        append("تشخيص فقط: لم تُرسَل أي بيانات برنامج ثابت أو طباعة.");
+        lambda$append$117(getString(R.string.text_439));
     }
 
-    private void clearLogWithHeader(String header) {
-        activityLog.setLength(0);
-        activityLog.append(header).append("\n");
-        if (output != null) output.setText(activityLog.toString());
+    private void clearLogWithHeader(String str) {
+        this.activityLog.setLength(0);
+        StringBuilder sb = this.activityLog;
+        sb.append(str);
+        sb.append("\n");
+        TextView textView = this.output;
+        if (textView != null) {
+            textView.setText(this.activityLog.toString());
+        }
     }
 
-    private void append(String message) {
+    /* JADX INFO: Access modifiers changed from: private */
+    /* renamed from: append, reason: merged with bridge method [inline-methods] */
+    public void lambda$append$117(final String str) {
         if (Looper.myLooper() != Looper.getMainLooper()) {
-            runOnUiThread(() -> append(message));
+            runOnUiThread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity$$ExternalSyntheticLambda123
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$append$117(str);
+                }
+            });
             return;
         }
-        activityLog.append(new SimpleDateFormat("HH:mm", Locale.US).format(new Date()))
-                .append("  ").append(message).append("\n");
-        if (output != null) output.setText(activityLog.toString());
+        StringBuilder sb = this.activityLog;
+        sb.append(new SimpleDateFormat("HH:mm", Locale.US).format(new Date()));
+        sb.append("  ");
+        sb.append(str);
+        sb.append("\n");
+        TextView textView = this.output;
+        if (textView != null) {
+            textView.setText(this.activityLog.toString());
+        }
     }
 
-    @Override protected void onDestroy() {
-        try { unregisterReceiver(usbReceiver); } catch (IllegalArgumentException ignored) {}
+    @Override // android.app.Activity
+    protected void onDestroy() {
+        MainDebugHooks.unregister(this);
+        this.layoutPreviewGeneration++;
+        Future<?> future = this.layoutPreviewTask;
+        if (future != null) {
+            future.cancel(true);
+        }
+        this.layoutPreviewExecutor.shutdownNow();
+        ValueAnimator valueAnimator = this.layoutModeAnimator;
+        if (valueAnimator != null) {
+            valueAnimator.cancel();
+        }
+        ImageView imageView = this.layoutPreviewImage;
+        if (imageView != null) {
+            imageView.setImageDrawable(null);
+        }
+        Bitmap bitmap = this.layoutPreviewBitmap;
+        if (bitmap != null && !bitmap.isRecycled()) {
+            this.layoutPreviewBitmap.recycle();
+        }
+        dismissCapsuleOverlay();
+        try {
+            unregisterReceiver(this.usbReceiver);
+        } catch (IllegalArgumentException unused) {
+        }
+        DocumentRenderer documentRenderer = this.documentRenderer;
         if (documentRenderer != null) {
             documentRenderer.close();
-            documentRenderer = null;
+            this.documentRenderer = null;
         }
-        if (currentPreviewBitmap != null && !currentPreviewBitmap.isRecycled()) {
-            currentPreviewBitmap.recycle();
-            currentPreviewBitmap = null;
+        Bitmap bitmap2 = this.currentPreviewBitmap;
+        if (bitmap2 != null && !bitmap2.isRecycled()) {
+            this.currentPreviewBitmap.recycle();
+            this.currentPreviewBitmap = null;
         }
         super.onDestroy();
     }

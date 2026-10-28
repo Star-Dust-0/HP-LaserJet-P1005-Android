@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Day splash: black printer drawing on the white splash background
+     (user-approved monochrome variants, 2026-10-26). The Android 12+ system
+     splash masks the icon to a circle; the drawing is authored at 60% of the
+     canvas so the full freestanding printer shows with transparent surround
+     (runtime frame evidence: full-bleed artwork circle-clipped into a solid
+     disc with cutouts, runs 40398397299 + 40407726142). -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/splash_glyph_src"
+    android:tint="#FF000000" />

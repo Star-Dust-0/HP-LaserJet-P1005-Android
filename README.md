@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="app/src/main/res/drawable-nodpi/p1005_photo.png" alt="HP LaserJet P1005" width="220"/>
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="HP LaserJet P1005 app icon" width="192"/>
 
 # HP LaserJet P1005 for Android
 
@@ -8,7 +8,7 @@ An Android app that prints documents and photos straight to an HP LaserJet P1005
 
 </div>
 
-> This repository holds recovered source, not a verified latest version. See `RECOVERY-STATUS.md`. A reconstruction of the shipped APK 1.1 is on the `reverse-engineered-v1.1` branch. Arabic README: [README.ar.md](README.ar.md).
+> **Status:** this is a reconstruction of the shipped HP P1005 app 1.1 (version code 217), built from the released APK. The original source repository was lost, so decompiled code was repaired by hand and checked against the shipped app. It builds and has been compared with the original (see *Verification* below). It has not been tested on a real printer yet. Arabic README: [README.ar.md](README.ar.md).
 
 ---
 
@@ -48,9 +48,28 @@ An Android app that prints documents and photos straight to an HP LaserJet P1005
 
 ## Build
 
+JDK 17, Gradle 8.7 (Android Gradle Plugin 8.5.2), compileSdk 35:
+
 ```bash
-./gradlew assembleRelease
+gradle :app:assembleRelease
 ```
+
+Signing keys are read from environment variables (`MORPHE_KEYSTORE_FILE`, `MORPHE_STORE_PASSWORD`, `MORPHE_KEY_ALIAS`, `MORPHE_KEY_PASSWORD`). Nothing secret is stored in the repository. Without them the build is unsigned or debug-signed.
+
+## Verification (original vs reconstructed)
+
+Decompiled code loses casts, branches and string whitespace, so a clean build proves little. These checks were run against the shipped APK 1.1:
+
+- **Opcode comparison** of every class: arithmetic and conversion instructions and call order. Fixed the int/float and long casts that decompiling had dropped (blank page preview, poster geometry, PBM output).
+- **Same-input comparison** of the original classes and the reconstructed classes on the JVM: page rendering for PNG, JPG, TXT, HTML, RTF, CSV, DOCX, XLSX, PPTX, ODT and unsupported files; every layout mode, paper size and scale mode; poster tiles; booklet order; the PBM bytes sent to the printer converter. Output is identical pixel for pixel and byte for byte.
+- **Resources:** the string pool and all 445 app strings (English and Arabic) match the original exactly, after restoring 156 strings whose leading and trailing spaces had been lost.
+- **Emulator run** (Android 14 emulator, original and reconstructed APK side by side): home screen, all tabs, the file picker, and the print preview for an image, a text file and a PDF, plus the first controls on each. Screens and UI trees are identical.
+
+**Not tested here (needs a phone and the printer):** USB OTG connection and permission, firmware load, real printing and print output, the system print service in the Android print dialog, tablet layout.
+
+Hand-rebuilt from bytecode because decompilers failed: `HpPrintService.processJob`, `MainActivity.startPrintPass`, the built-in test page and firmware transfer routines, `showCapsuleNav`, `resolvePageRange`, `UsbPrinterIO.sendXqx`, the end of `SheetComposer.composeSheet` and `posterTileMap`, and several `PrintFlow` methods. Resource names differ from the shipped APK (it was resource-shrunk).
+
+The older recovered files are kept under `recovery-notes/recovered-source` for reference. The prebuilt `libfoo2xqx.so` files are copied unchanged from the shipped APK.
 
 ## Protocol and licence
 

@@ -1,9 +1,5 @@
 # Recovery status: HP LaserJet P1005 for Android
 
-This repository holds recovered source, not a verified latest version.
+The project at the repository root is the reconstruction of the shipped APK 1.1 (code 217). It builds, and it has been compared with the original (see README, section Verification). It is not tested on a real printer.
 
-- The files were rebuilt from the text of file writes, reads and simple edits that survived. They are not a git clone and have no original history.
-- Some files are older than the last release and some files are missing. Per-file status is in recovery-notes/MANIFEST.csv and the gaps are in recovery-notes/RECOVERY-NOTES.txt.
-- It has not been built or tested. Do not treat it as the shipped version.
-- Binary files such as icons and images are not included.
-- Work to rebuild missing parts from the shipped installers will go on a separate branch. This branch keeps the recovered state untouched.
+The older recovered files (rebuilt from surviving file writes and edits, some older than the last release) are kept for reference in `recovery-notes/recovered-source`. Per-file status is in `recovery-notes/MANIFEST.csv` and the gaps are in `recovery-notes/RECOVERY-NOTES.txt`. The workflows in `.github/workflows` and the scripts in `ci/` belong to that older tree and are manual-only.

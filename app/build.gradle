@@ -1,7 +1,36 @@
-
-// Device-side regression for the actual live layout screen.
-android.defaultConfig.testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-dependencies {
-    androidTestImplementation 'androidx.test:runner:1.6.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+plugins { id 'com.android.application' }
+android {
+    signingConfigs {
+        morphe {
+            // Signing material comes from the environment only (CI secrets or local shell). Nothing secret is stored in the repo.
+            def ks = System.getenv("MORPHE_KEYSTORE_FILE")
+            if (ks) {
+                storeFile file(ks)
+                storeType "PKCS12"
+                storePassword System.getenv("MORPHE_STORE_PASSWORD")
+                keyAlias System.getenv("MORPHE_KEY_ALIAS")
+                keyPassword System.getenv("MORPHE_KEY_PASSWORD")
+            }
+        }
+    }
+    packagingOptions { jniLibs { useLegacyPackaging = true } }
+    namespace 'com.mohamedelnaggar.hpp1005'
+    compileSdk 35
+    defaultConfig { applicationId 'com.hpp1005.printer'; minSdk 23; targetSdk 28; versionCode 217; versionName '1.1' }
+    buildFeatures { buildConfig true }
+    buildTypes {
+        debug { if (System.getenv("MORPHE_KEYSTORE_FILE")) signingConfig signingConfigs.morphe }
+        release {
+            minifyEnabled false
+            if (System.getenv("MORPHE_KEYSTORE_FILE")) signingConfig signingConfigs.morphe
+        }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    lint { abortOnError false; checkReleaseBuilds false }
 }
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    implementation 'androidx.core:core:1.13.0'
+    implementation 'androidx.activity:activity:1.10.1'
+}
+tasks.withType(JavaCompile) { options.compilerArgs << "-Xmaxerrs" << "2000" }

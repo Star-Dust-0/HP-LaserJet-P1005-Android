@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="app/src/main/res/drawable-nodpi/p1005_photo.png" alt="HP LaserJet P1005" width="220"/>
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="HP LaserJet P1005 app icon" width="192"/>
 
 # طابعة HP LaserJet P1005 لأندرويد
 
