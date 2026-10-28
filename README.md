@@ -2,70 +2,64 @@
 
 <img src="app/src/main/res/drawable-nodpi/p1005_photo.png" alt="HP LaserJet P1005" width="220"/>
 
-# طابعة HP LaserJet P1005 لأندرويد
+# HP LaserJet P1005 for Android
 
-تطبيق أندرويد لطباعة المستندات والصور مباشرة على طابعة HP LaserJet P1005 عبر USB OTG، دون حاسوب ودون شبكة.
+An Android app that prints documents and photos straight to an HP LaserJet P1005 over USB OTG. No computer and no network needed.
 
 </div>
 
+> This repository holds recovered source, not a verified latest version. See `RECOVERY-STATUS.md`. A reconstruction of the shipped APK 1.1 is on the `reverse-engineered-v1.1` branch. Arabic README: [README.ar.md](README.ar.md).
+
 ---
 
-## المزايا
+## Features
 
-| الميزة | الوصف |
+| Feature | Description |
 | --- | --- |
-| طباعة المستندات | طباعة ملفات PDF مباشرة على الطابعة |
-| طباعة الصور | تحويل الصور وطباعتها بالأبيض والأسود |
-| الاستقبال من التطبيقات | استقبال الملفات من أي تطبيق عبر قائمة «مشاركة» |
-| قائمة الطباعة | متابعة المهام الجارية والمنتظرة وسجل الطباعة |
-| خيارات الطباعة | عدد النسخ، نطاق الصفحات، حجم الورق، تخطيط الصفحة، الجودة، والطباعة على الوجهين يدويًا |
-| تهيئة الطابعة | معالج إعداد يفحص البرنامج الثابت ويطبع صفحة تجريبية |
-| صيانة الطابعة | فحص إصدار البرنامج الثابت (FWVER) وتحميله عند الحاجة |
-| سجل التشخيص | سجل USB والطباعة لاستكشاف الأخطاء |
-| واجهة عربية | تصميم عربي كامل بأسلوب One UI، داكن وفاتح، للهاتف والجهاز اللوحي |
+| Print documents | Print PDF files directly on the printer |
+| Print photos | Convert photos and print them in black and white |
+| Receive from other apps | Accept files from any app through the Share menu |
+| Print queue | Follow running and waiting jobs, plus a print history |
+| Print options | Copies, page range, paper size, page layout, quality, and manual two-sided printing |
+| Printer setup | A setup wizard checks the firmware and prints a test page |
+| Printer maintenance | Check the firmware version (FWVER) and load it when needed |
+| Diagnostics log | USB and print log for troubleshooting |
+| Arabic interface | Full Arabic UI in a One UI style, dark and light, for phone and tablet |
 
-## المتطلبات
+## Requirements
 
-- جهاز أندرويد يدعم USB OTG، وكابل أو محوّل OTG.
-- طابعة HP LaserJet P1005 متصلة مباشرة بالجهاز.
+- An Android device with USB OTG support, and an OTG cable or adapter.
+- An HP LaserJet P1005 connected directly to the device.
 
-## طريقة الاستخدام
+## How to use
 
-1. شغّل الطابعة ووصّلها بالجهاز عبر USB OTG.
-2. افتح التطبيق واضغط **إعداد الطابعة** واتبع خطوات التهيئة حتى طباعة الصفحة التجريبية.
-3. اختر **طباعة مستند** أو **طباعة الصور**، أو شارك ملفًا إلى التطبيق من أي مكان.
-4. اضبط خيارات الطباعة ثم اضغط **طباعة**.
+1. Turn the printer on and connect it to the device over USB OTG.
+2. Open the app, tap **Printer setup**, and follow the steps until the test page prints.
+3. Choose **Print document** or **Print photos**, or share a file to the app from anywhere.
+4. Set the print options, then tap **Print**.
 
-> **ملاحظة مهمة:** طابعة P1005 تفقد برنامجها الثابت بعد كل فصل للكهرباء. عند تشغيلها من جديد، حمّل البرنامج الثابت من صفحة الصيانة مرة واحدة قبل الطباعة، ولا تُكرر التحميل دون حاجة.
+> **Important:** the P1005 loses its firmware every time it loses power. After you switch it on again, load the firmware once from the maintenance page before printing. Do not reload it without a reason.
 
-## القيود المعروفة
+## Known limits
 
-- يدعم التطبيق طابعة HP LaserJet P1005 فقط، وطباعة أحادية اللون فقط.
-- الطباعة عبر USB OTG السلكية فقط؛ لا توجد طباعة شبكية أو لاسلكية.
-- الطباعة على الوجهين يدوية (تقليب الورق وإعادة إدخاله).
+- Only the HP LaserJet P1005 is supported, in monochrome only.
+- Printing works over wired USB OTG only. There is no network or wireless printing.
+- Two-sided printing is manual (flip the paper and feed it again).
 
-## البناء
-
-يبنى التطبيق عبر GitHub Actions عند كل دفع إلى `main`، وتُنشر حزمة APK موقّعة في صفحة الإصدارات. للبناء محليًا:
+## Build
 
 ```bash
 ./gradlew assembleRelease
 ```
 
-## البروتوكول والترخيص
+## Protocol and licence
 
-تستخدم الطابعة بروتوكول XQX المملوك، لذا لا يمكن إرسال نص أو صورة خام مباشرة. يحوّل التطبيق الصفحات داخليًا اعتمادًا على مولّد `foo2xqx` من مشروع OpenPrinting؛ راجع إشعارات ترخيص المصدر قبل إعادة توزيع أي جزء منه: https://github.com/OpenPrinting/foo2zjs
-
-<details>
-<summary>English summary</summary>
-
-An Arabic-first Android app that prints PDF documents and images directly to an HP LaserJet P1005 over USB OTG: print queue with history, copies/page-range/paper-size/layout/quality options, manual duplex, printer setup with firmware check and test page, firmware maintenance, and a diagnostics log. P1005 only, monochrome, wired USB OTG only; firmware must be reloaded after every printer power cycle. Built by GitHub Actions; signed APKs are attached to Releases.
-
-</details>
+The printer uses the proprietary XQX protocol, so plain text or raw images cannot be sent directly. The app converts pages internally with the `foo2xqx` generator from the OpenPrinting project. Check its source licence notices before redistributing any part of it: https://github.com/OpenPrinting/foo2zjs
 
 ---
 
 <div align="center">
-بُني بواسطة <b>Instinct</b> · brought to you by Instinct
-</div>
 
+brought to you by <b>Instinct</b>
+
+</div>
