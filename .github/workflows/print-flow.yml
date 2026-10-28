@@ -1,0 +1,38 @@
+name: Print flow regression
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Fetch matching debug APK from pull request build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RUN=$(gh run list --workflow 'Android APK Build' --commit '${{ github.sha }}' --status success --json databaseId --jq '.[0].databaseId')
+          test -n "$RUN"
+          gh run download "$RUN" --name hp-p1005-android-debug-apk --dir apk
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_tablet
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot-save -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: adb install -r apk/app-debug.apk && adb push ci/flow.pdf ci/flow4.pdf ci/flow8.pdf /data/local/tmp/ && python3 ci/print-flow-smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: print-flow-evidence
+          path: shots/

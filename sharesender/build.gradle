@@ -1,0 +1,18 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.hpp1005.sharesender'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.hpp1005.sharesender'
+        minSdk 23
+        targetSdk 35
+    }
+}
+
+dependencies {
+    implementation 'androidx.core:core:1.13.1'
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Night splash: white printer drawing on the dark splash background. Same
+     60%-of-canvas authoring as the day variant: the circle mask keeps the
+     transparent surround, never a filled disc. -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/splash_glyph_src" />
