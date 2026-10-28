@@ -1,7 +1,0 @@
-
-// Device-side regression for the actual live layout screen.
-android.defaultConfig.testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-dependencies {
-    androidTestImplementation 'androidx.test:runner:1.6.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
-}

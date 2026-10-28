@@ -69,7 +69,7 @@ Decompiled code loses casts, branches and string whitespace, so a clean build pr
 
 Hand-rebuilt from bytecode because decompilers failed: `HpPrintService.processJob`, `MainActivity.startPrintPass`, the built-in test page and firmware transfer routines, `showCapsuleNav`, `resolvePageRange`, `UsbPrinterIO.sendXqx`, the end of `SheetComposer.composeSheet` and `posterTileMap`, and several `PrintFlow` methods. Resource names differ from the shipped APK (it was resource-shrunk).
 
-The older recovered files are kept under `recovery-notes/recovered-source` for reference. The prebuilt `libfoo2xqx.so` files are copied unchanged from the shipped APK.
+The prebuilt `libfoo2xqx.so` files are copied unchanged from the shipped APK.
 
 ## Protocol and licence
 
