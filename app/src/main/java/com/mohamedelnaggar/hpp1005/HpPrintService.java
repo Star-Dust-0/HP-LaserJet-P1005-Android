@@ -237,6 +237,9 @@ public class HpPrintService extends PrintService {
                         throw new IllegalStateException(localized(R.string.text_011));
                     }
                 }
+                if (!fakePrinterEnabled) {
+                    findPrinter = autoPrepareForJob(printJob, findPrinter);
+                }
                 PrintAttributes attributes = printJobInfo != null ? printJobInfo.getAttributes() : null;
                 PrintAttributes.MediaSize mediaSize = attributes != null ? attributes.getMediaSize() : null;
                 String paperFor = paperFor(mediaSize);
@@ -326,6 +329,9 @@ public class HpPrintService extends PrintService {
                 } finally {
                     documentRenderer.close();
                 }
+            } catch (PrepareAbortedException e) {
+                cancelled = true;
+                Log.i(TAG, "print job cancelled while preparing the printer");
             } catch (Exception e) {
                 error = e.getMessage() != null ? e.getMessage() : localized(R.string.text_018);
                 Log.w(TAG, "print job failed", e);
@@ -457,6 +463,77 @@ public class HpPrintService extends PrintService {
         LinkedHashSet linkedHashSet = new LinkedHashSet(sharedPreferences.getStringSet(STARTED_JOBS_KEY, Collections.emptySet()));
         linkedHashSet.remove(str);
         sharedPreferences.edit().putStringSet(STARTED_JOBS_KEY, linkedHashSet).apply();
+    }
+
+    /* Sentinel used to unwind the worker when the job is cancelled while the
+       printer is being prepared, so the job settles as cancelled, not failed. */
+    private static final class PrepareAbortedException extends Exception {
+        private PrepareAbortedException() {
+        }
+    }
+
+    /* Auto-prepare for a system print job: verifies the printer firmware and
+       loads it only when missing, then returns the device handle to print to
+       (the printer can re-enumerate when the firmware loads). Runs on the job
+       worker thread with UsbPrinterIO.JOB_LOCK already held, so it cannot
+       collide with the app's own prepare or another print job. */
+    private UsbDevice autoPrepareForJob(final PrintJob printJob, UsbDevice usbDevice) throws Exception {
+        final Context localizedContext = AppLanguage.wrap(this, AppLanguage.selected(this));
+        final String[] lastPermissionRequestName = new String[1];
+        final long[] lastPermissionRequestAt = new long[1];
+        try {
+            return PrinterFirmware.ensureReady(localizedContext, this.usbManager, usbDevice, new PrinterFirmware.Listener() {
+                @Override // com.mohamedelnaggar.hpp1005.PrinterFirmware.Listener
+                public void onChecking() {
+                    postJobStatus(printJob, localizedContext.getString(R.string.text_463));
+                }
+
+                @Override // com.mohamedelnaggar.hpp1005.PrinterFirmware.Listener
+                public void onSending() {
+                    postJobStatus(printJob, localizedContext.getString(R.string.text_453));
+                }
+
+                @Override // com.mohamedelnaggar.hpp1005.PrinterFirmware.Listener
+                public void onVerifying() {
+                    postJobStatus(printJob, localizedContext.getString(R.string.text_464));
+                }
+
+                @Override // com.mohamedelnaggar.hpp1005.PrinterFirmware.Listener
+                public void onPermissionNeeded(UsbDevice device) {
+                    postJobStatus(printJob, localizedContext.getString(R.string.text_461));
+                    String deviceName = device.getDeviceName();
+                    long now = System.currentTimeMillis();
+                    if (!deviceName.equals(lastPermissionRequestName[0]) || now - lastPermissionRequestAt[0] > 15000L) {
+                        lastPermissionRequestName[0] = deviceName;
+                        lastPermissionRequestAt[0] = now;
+                        requestUsbPermission(device);
+                    }
+                }
+            }, new PrinterFirmware.AbortCheck() {
+                @Override // com.mohamedelnaggar.hpp1005.PrinterFirmware.AbortCheck
+                public boolean aborted() {
+                    return HpPrintService.this.cancelFlags.containsKey(printJob);
+                }
+            });
+        } catch (PrinterFirmware.CancelledException e) {
+            throw new PrepareAbortedException();
+        } catch (Exception e2) {
+            String detail = e2.getMessage();
+            throw new IllegalStateException(localizedContext.getString(R.string.text_449) + (detail != null ? detail : localizedContext.getString(R.string.text_018)));
+        }
+    }
+
+    private void postJobStatus(final PrintJob printJob, final String str) {
+        this.mainHandler.post(new Runnable() {
+            @Override // java.lang.Runnable
+            public void run() {
+                try {
+                    printJob.setStatus((CharSequence) str);
+                } catch (Exception e) {
+                    Log.w(HpPrintService.TAG, "could not update job status", e);
+                }
+            }
+        });
     }
 
     /* JADX INFO: Access modifiers changed from: private */

@@ -3105,45 +3105,8 @@ public class MainActivity extends ComponentActivity {
     }
 
     private FirmwareCheck checkFirmwareStatus() {
-        UsbDevice findConnectedPrinter = findConnectedPrinter();
-        if (findConnectedPrinter == null) {
-            return new FirmwareCheck(0, getString(R.string.text_401));
-        }
-        if (!this.usbManager.hasPermission(findConnectedPrinter)) {
-            return new FirmwareCheck(0, getString(R.string.text_403));
-        }
-        UsbDeviceConnection usbDeviceConnection = null;
-        try {
-            try {
-                usbDeviceConnection = this.usbManager.openDevice(findConnectedPrinter);
-            } catch (Exception e) {
-                return new FirmwareCheck(0, e.getClass().getSimpleName() + ": " + e.getMessage());
-            }
-            if (usbDeviceConnection == null) {
-                return new FirmwareCheck(0, getString(R.string.text_404));
-            }
-            int i = -1;
-            for (int i2 = 0; i2 < findConnectedPrinter.getInterfaceCount(); i2++) {
-                if (findConnectedPrinter.getInterface(i2).getInterfaceClass() == 7) {
-                    i = findConnectedPrinter.getInterface(i2).getId();
-                    break;
-                }
-            }
-            if (i < 0) {
-                return new FirmwareCheck(0, getString(R.string.text_405));
-            }
-            byte[] bArr = new byte[1024];
-            int controlTransfer = usbDeviceConnection.controlTransfer(161, 0, 0, i, bArr, 1024, 3000);
-            if (controlTransfer < 2) {
-                return new FirmwareCheck(0, getString(R.string.text_406) + controlTransfer + ").");
-            }
-            String str = new String(bArr, 2, Math.min(Math.max(0, (((bArr[0] & UByte.MAX_VALUE) << 8) | (bArr[1] & UByte.MAX_VALUE)) - 2), controlTransfer - 2), StandardCharsets.US_ASCII);
-            return str.contains("FWVER:") ? new FirmwareCheck(1, str) : new FirmwareCheck(2, str);
-        } finally {
-            if (usbDeviceConnection != null) {
-                usbDeviceConnection.close();
-            }
-        }
+        PrinterFirmware.Check check = PrinterFirmware.check(this, this.usbManager);
+        return new FirmwareCheck(check.status, check.detail);
     }
 
     private void addPrepareBanner(LinearLayout linearLayout) {
@@ -6090,71 +6053,7 @@ public class MainActivity extends ComponentActivity {
     }
 
     private int sendBuiltInFirmware(UsbDevice usbDevice) throws Exception {
-        InputStream openRawResource = getResources().openRawResource(R.raw.sihpp1005);
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        byte[] bArr = new byte[8192];
-        while (true) {
-            int read = openRawResource.read(bArr);
-            if (read == -1) {
-                break;
-            }
-            byteArrayOutputStream.write(bArr, 0, read);
-        }
-        openRawResource.close();
-        byte[] byteArray = byteArrayOutputStream.toByteArray();
-        if (byteArray.length == 0) {
-            throw new IllegalStateException(getString(R.string.text_425));
-        }
-        UsbDeviceConnection openDevice = this.usbManager.openDevice(usbDevice);
-        if (openDevice == null) {
-            throw new IllegalStateException(getString(R.string.text_416));
-        }
-        UsbInterface usbInterface = null;
-        boolean claimed = false;
-        try {
-            for (int i = 0; i < usbDevice.getInterfaceCount(); i++) {
-                UsbInterface candidate = usbDevice.getInterface(i);
-                if (candidate.getInterfaceClass() == 7) {
-                    usbInterface = candidate;
-                    break;
-                }
-            }
-            if (usbInterface == null) {
-                throw new IllegalStateException(getString(R.string.text_001));
-            }
-            claimed = openDevice.claimInterface(usbInterface, true);
-            if (!claimed) {
-                throw new IllegalStateException(getString(R.string.text_002));
-            }
-            UsbEndpoint usbEndpoint = null;
-            for (int i2 = 0; i2 < usbInterface.getEndpointCount(); i2++) {
-                UsbEndpoint endpoint = usbInterface.getEndpoint(i2);
-                if (endpoint.getDirection() == 0 && endpoint.getType() == 2) {
-                    usbEndpoint = endpoint;
-                    break;
-                }
-            }
-            if (usbEndpoint == null) {
-                throw new IllegalStateException(getString(R.string.text_003));
-            }
-            int i3 = 0;
-            while (i3 < byteArray.length) {
-                int bulkTransfer = openDevice.bulkTransfer(usbEndpoint, byteArray, i3, Math.min(16384, byteArray.length - i3), 10000);
-                if (bulkTransfer <= 0) {
-                    throw new IllegalStateException(getString(R.string.text_417) + i3 + getString(R.string.text_016) + byteArray.length + getString(R.string.text_418) + bulkTransfer + ").");
-                }
-                i3 += bulkTransfer;
-            }
-            return i3;
-        } finally {
-            if (claimed && usbInterface != null) {
-                try {
-                    openDevice.releaseInterface(usbInterface);
-                } catch (Exception unused) {
-                }
-            }
-            openDevice.close();
-        }
+        return PrinterFirmware.send(this, this.usbManager, usbDevice);
     }
 
     /* JADX INFO: Access modifiers changed from: private */

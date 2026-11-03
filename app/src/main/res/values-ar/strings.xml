@@ -466,4 +466,6 @@
     <string name="text_460">تحميل برنامج الطابعة…</string>
     <string name="text_461">تهيئة تلقائية: طلب إذن USB…</string>
     <string name="text_462">ما زالت الطابعة لا ترسل إصدار البرنامج الثابت بعد التحميل.</string>
+    <string name="text_463">فحص الطابعة قبل الطباعة…</string>
+    <string name="text_464">إنهاء تهيئة الطابعة…</string>
 </resources>

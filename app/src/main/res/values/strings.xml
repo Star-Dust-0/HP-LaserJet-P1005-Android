@@ -466,4 +466,6 @@
     <string name="text_460">Loading printer software…</string>
     <string name="text_461">Auto-prepare: requesting USB permission…</string>
     <string name="text_462">The printer still does not report a firmware version after loading.</string>
+    <string name="text_463">Checking the printer before printing…</string>
+    <string name="text_464">Finishing printer preparation…</string>
 </resources>
