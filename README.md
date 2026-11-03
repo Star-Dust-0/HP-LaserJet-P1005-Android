@@ -21,7 +21,7 @@ An Android app that prints documents and photos straight to an HP LaserJet P1005
 | Receive from other apps | Accept files from any app through the Share menu |
 | Print queue | Follow running and waiting jobs, plus a print history |
 | Print options | Copies, page range, paper size, page layout, quality, and manual two-sided printing |
-| Printer setup | A setup wizard checks the firmware and prints a test page |
+| Automatic setup | The app prepares the printer by itself as soon as it is connected, with a clear do-not-unplug message, and loads the printer software when needed. A manual setup wizard and test page stay available |
 | Printer maintenance | Check the firmware version (FWVER) and load it when needed |
 | Diagnostics log | USB and print log for troubleshooting |
 | Arabic interface | Full Arabic UI in a One UI style, dark and light, for phone and tablet |
@@ -34,11 +34,11 @@ An Android app that prints documents and photos straight to an HP LaserJet P1005
 ## How to use
 
 1. Turn the printer on and connect it to the device over USB OTG.
-2. Open the app, tap **Printer setup**, and follow the steps until the test page prints.
+2. Open the app and connect the printer. The app checks and loads the printer software automatically and tells you when the printer is ready. **Printer setup** is still there if you want a test page.
 3. Choose **Print document** or **Print photos**, or share a file to the app from anywhere.
 4. Set the print options, then tap **Print**.
 
-> **Important:** the P1005 loses its firmware every time it loses power. After you switch it on again, load the firmware once from the maintenance page before printing. Do not reload it without a reason.
+> **Important:** the P1005 loses its firmware every time it loses power. The app reloads it automatically when the printer connects, so just keep the printer plugged in for a moment after switching it on. Do not reload it by hand without a reason.
 
 ## Known limits
 

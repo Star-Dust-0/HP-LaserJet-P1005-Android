@@ -39,6 +39,7 @@ import android.hardware.usb.UsbManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.text.TextUtils;
@@ -150,6 +151,18 @@ public class MainActivity extends ComponentActivity {
     private String themeMode = "system";
     private boolean hapticsEnabled = true;
     private boolean confirmFirmwareLoad = true;
+    private int prepareState = 0;
+    private int prepareDetail = 0;
+    private String prepareFailureReason = "";
+    private boolean prepareReadyBannerDismissed = false;
+    private boolean autoPreparePermissionRequested = false;
+    private final Handler autoPrepareHandler = new Handler(Looper.getMainLooper());
+    private final Runnable autoPrepareRunnable = new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.2
+        @Override // java.lang.Runnable
+        public void run() {
+            MainActivity.this.maybeAutoPrepare();
+        }
+    };
     private String selectedDocumentName = "";
     private String selectedDocumentMime = "";
     private int currentPreviewPage = 0;
@@ -187,6 +200,7 @@ public class MainActivity extends ComponentActivity {
                     MainActivity mainActivity2 = MainActivity.this;
                     mainActivity2.lambda$append$117(mainActivity2.getString(R.string.text_023));
                     MainActivity.this.inspectDevice(usbDevice);
+                    MainActivity.this.maybeAutoPrepare();
                 } else {
                     MainActivity.this.lambda$append$117(MainActivity.this.getString(R.string.text_024) + MainActivity.this.describe(usbDevice));
                 }
@@ -197,9 +211,11 @@ public class MainActivity extends ComponentActivity {
                 MainActivity mainActivity3 = MainActivity.this;
                 mainActivity3.lambda$append$117(mainActivity3.getString(R.string.text_025));
                 MainActivity.this.renderApp();
+                MainActivity.this.scheduleAutoPrepare(1500L);
             } else if ("android.hardware.usb.action.USB_DEVICE_DETACHED".equals(intent.getAction())) {
                 MainActivity mainActivity4 = MainActivity.this;
                 mainActivity4.lambda$append$117(mainActivity4.getString(R.string.text_026));
+                MainActivity.this.onPrinterDetached();
                 MainActivity.this.renderApp();
             }
         }
@@ -298,6 +314,7 @@ public class MainActivity extends ComponentActivity {
             registerReceiver(this.usbReceiver, intentFilter);
         }
         MainDebugHooks.register(this);
+        scheduleAutoPrepare(1000L);
         if (handleIncomingIntent(getIntent())) {
             return;
         }
@@ -634,10 +651,34 @@ public class MainActivity extends ComponentActivity {
     }
 
     private TextView statusPill(boolean z) {
-        TextView label = label("●  " + getString(z ? R.string.text_032 : R.string.text_033), 13.0f, z ? okText() : warnText(), true);
+        int i;
+        int i2;
+        int i3;
+        if (!z) {
+            i = R.string.text_033;
+            i2 = warnText();
+            i3 = warnBg();
+        } else if (this.prepareState == 1) {
+            i = R.string.text_450;
+            i2 = tonalText();
+            i3 = tonalBg();
+        } else if (this.prepareState == 2) {
+            i = R.string.text_451;
+            i2 = okText();
+            i3 = okBg();
+        } else if (this.prepareState == 3) {
+            i = R.string.text_452;
+            i2 = warnText();
+            i3 = warnBg();
+        } else {
+            i = R.string.text_032;
+            i2 = okText();
+            i3 = okBg();
+        }
+        TextView label = label("●  " + getString(i), 13.0f, i2, true);
         label.setGravity(17);
         label.setPadding(dp(10.0f), dp(5.0f), dp(10.0f), dp(5.0f));
-        label.setBackground(flat(z ? okBg() : warnBg(), 16));
+        label.setBackground(flat(i3, 16));
         return label;
     }
 
@@ -1656,6 +1697,7 @@ public class MainActivity extends ComponentActivity {
         });
         LinearLayout vertical3 = vertical();
         vertical3.addView(card, margin(0, 0, 0, 14));
+        addPrepareBanner(vertical3);
         vertical3.addView(horizontal2, margin(0, 0, 0, 0));
         LinearLayout vertical4 = vertical();
         vertical4.addView(horizontal3, margin(2, 0, 0, 8));
@@ -2924,6 +2966,285 @@ public class MainActivity extends ComponentActivity {
         linearLayout.addView(horizontal, new LinearLayout.LayoutParams(-1, -2));
     }
 
+    private void onPrinterDetached() {
+        this.autoPreparePermissionRequested = false;
+        if (this.prepareState != 1) {
+            this.prepareState = 0;
+            this.prepareDetail = 0;
+            this.prepareFailureReason = "";
+            this.prepareReadyBannerDismissed = false;
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void scheduleAutoPrepare(long j) {
+        this.autoPrepareHandler.removeCallbacks(this.autoPrepareRunnable);
+        this.autoPrepareHandler.postDelayed(this.autoPrepareRunnable, j);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void maybeAutoPrepare() {
+        if (this.setupRunning || this.prepareState == 1 || this.prepareState == 2) {
+            return;
+        }
+        UsbDevice findConnectedPrinter = findConnectedPrinter();
+        if (findConnectedPrinter == null) {
+            return;
+        }
+        if (!this.usbManager.hasPermission(findConnectedPrinter)) {
+            if (!this.autoPreparePermissionRequested) {
+                this.autoPreparePermissionRequested = true;
+                lambda$append$117(getString(R.string.text_461));
+                this.usbManager.requestPermission(findConnectedPrinter, this.permissionIntent);
+            }
+            return;
+        }
+        startAutoPrepare(findConnectedPrinter);
+    }
+
+    private void retryAutoPrepare() {
+        this.prepareState = 0;
+        this.prepareDetail = 0;
+        this.prepareFailureReason = "";
+        renderApp();
+        maybeAutoPrepare();
+    }
+
+    private void startAutoPrepare(final UsbDevice usbDevice) {
+        this.prepareState = 1;
+        this.prepareDetail = 1;
+        this.prepareFailureReason = "";
+        this.prepareReadyBannerDismissed = false;
+        lambda$append$117(getString(R.string.text_445));
+        renderApp();
+        new Thread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.3
+            @Override // java.lang.Runnable
+            public void run() {
+                MainActivity.this.runAutoPrepare(usbDevice);
+            }
+        }, "P1005-Auto-Prepare").start();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void runAutoPrepare(UsbDevice usbDevice) {
+        UsbPrinterIO.JOB_LOCK.lock();
+        try {
+            try {
+                Thread.sleep(700L);
+                FirmwareCheck checkFirmwareStatus = checkFirmwareStatus();
+                if (checkFirmwareStatus.status == 1) {
+                    finishAutoPrepare(true, getString(R.string.text_446), null);
+                    return;
+                }
+                updatePrepareDetail(2);
+                lambda$append$117(getString(R.string.text_447));
+                sendBuiltInFirmware(usbDevice);
+                FirmwareCheck firmwareCheck = null;
+                for (int i = 0; i < 12; i++) {
+                    Thread.sleep(2000L);
+                    firmwareCheck = checkFirmwareStatus();
+                    if (firmwareCheck.status == 1) {
+                        break;
+                    }
+                }
+                if (firmwareCheck != null && firmwareCheck.status == 1) {
+                    finishAutoPrepare(true, getString(R.string.text_448), null);
+                } else if (firmwareCheck != null && firmwareCheck.status == 2) {
+                    finishAutoPrepare(false, null, getString(R.string.text_462));
+                } else {
+                    finishAutoPrepare(false, null, firmwareCheck == null ? getString(R.string.text_401) : firmwareCheck.detail);
+                }
+            } finally {
+                UsbPrinterIO.JOB_LOCK.unlock();
+            }
+        } catch (Exception e) {
+            finishAutoPrepare(false, null, e.getClass().getSimpleName() + ": " + e.getMessage());
+        }
+    }
+
+    private void updatePrepareDetail(final int i) {
+        runOnUiThread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.4
+            @Override // java.lang.Runnable
+            public void run() {
+                MainActivity.this.prepareDetail = i;
+                MainActivity.this.renderApp();
+            }
+        });
+    }
+
+    private void finishAutoPrepare(final boolean z, final String str, final String str2) {
+        runOnUiThread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.5
+            @Override // java.lang.Runnable
+            public void run() {
+                MainActivity.this.prepareState = z ? 2 : 3;
+                MainActivity.this.prepareDetail = 0;
+                if (z) {
+                    MainActivity.this.prepareFailureReason = "";
+                    if (str != null) {
+                        MainActivity.this.lambda$append$117(str);
+                    }
+                } else {
+                    MainActivity mainActivity = MainActivity.this;
+                    mainActivity.prepareFailureReason = str2 == null ? "" : str2;
+                    MainActivity.this.lambda$append$117(MainActivity.this.getString(R.string.text_449) + MainActivity.this.prepareFailureReason);
+                }
+                MainActivity.this.renderApp();
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    static final class FirmwareCheck {
+        String detail;
+        int status;
+
+        FirmwareCheck(int i, String str) {
+            this.status = i;
+            this.detail = str;
+        }
+    }
+
+    private FirmwareCheck checkFirmwareStatus() {
+        UsbDevice findConnectedPrinter = findConnectedPrinter();
+        if (findConnectedPrinter == null) {
+            return new FirmwareCheck(0, getString(R.string.text_401));
+        }
+        if (!this.usbManager.hasPermission(findConnectedPrinter)) {
+            return new FirmwareCheck(0, getString(R.string.text_403));
+        }
+        UsbDeviceConnection usbDeviceConnection = null;
+        try {
+            try {
+                usbDeviceConnection = this.usbManager.openDevice(findConnectedPrinter);
+            } catch (Exception e) {
+                return new FirmwareCheck(0, e.getClass().getSimpleName() + ": " + e.getMessage());
+            }
+            if (usbDeviceConnection == null) {
+                return new FirmwareCheck(0, getString(R.string.text_404));
+            }
+            int i = -1;
+            for (int i2 = 0; i2 < findConnectedPrinter.getInterfaceCount(); i2++) {
+                if (findConnectedPrinter.getInterface(i2).getInterfaceClass() == 7) {
+                    i = findConnectedPrinter.getInterface(i2).getId();
+                    break;
+                }
+            }
+            if (i < 0) {
+                return new FirmwareCheck(0, getString(R.string.text_405));
+            }
+            byte[] bArr = new byte[1024];
+            int controlTransfer = usbDeviceConnection.controlTransfer(161, 0, 0, i, bArr, 1024, 3000);
+            if (controlTransfer < 2) {
+                return new FirmwareCheck(0, getString(R.string.text_406) + controlTransfer + ").");
+            }
+            String str = new String(bArr, 2, Math.min(Math.max(0, (((bArr[0] & UByte.MAX_VALUE) << 8) | (bArr[1] & UByte.MAX_VALUE)) - 2), controlTransfer - 2), StandardCharsets.US_ASCII);
+            return str.contains("FWVER:") ? new FirmwareCheck(1, str) : new FirmwareCheck(2, str);
+        } finally {
+            if (usbDeviceConnection != null) {
+                usbDeviceConnection.close();
+            }
+        }
+    }
+
+    private void addPrepareBanner(LinearLayout linearLayout) {
+        int i = this.prepareState;
+        if (i == 1) {
+            LinearLayout vertical = vertical();
+            vertical.setPadding(dp(16.0f), dp(14.0f), dp(16.0f), dp(14.0f));
+            vertical.setBackground(flat(warnBg(), 26));
+            vertical.setClipToOutline(true);
+            LinearLayout horizontal = horizontal();
+            horizontal.setGravity(16);
+            TextView label = label("!", 15.0f, -1, true);
+            label.setGravity(17);
+            label.setBackground(flat(warnText(), 18));
+            horizontal.addView(label, new LinearLayout.LayoutParams(dp(36.0f), dp(36.0f)));
+            LinearLayout vertical2 = vertical();
+            vertical2.setPadding(dp(12.0f), 0, dp(4.0f), 0);
+            vertical2.addView(label(getString(R.string.text_453), 14.5f, textPrimary(), true), margin(0, 0, 0, 3));
+            TextView label2 = label(getString(R.string.text_454), 11.5f, textSecondary(), false);
+            label2.setLineSpacing(dp(2.0f), 1.0f);
+            vertical2.addView(label2);
+            horizontal.addView(vertical2, new LinearLayout.LayoutParams(0, -2, 1.0f));
+            vertical.addView(horizontal);
+            ProgressBar progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+            progressBar.setIndeterminate(true);
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -2);
+            layoutParams.topMargin = dp(10.0f);
+            vertical.addView(progressBar, layoutParams);
+            TextView label3 = label(getString(this.prepareDetail == 2 ? R.string.text_460 : R.string.text_459), 11.5f, warnText(), true);
+            LinearLayout.LayoutParams layoutParams2 = new LinearLayout.LayoutParams(-2, -2);
+            layoutParams2.topMargin = dp(6.0f);
+            vertical.addView(label3, layoutParams2);
+            linearLayout.addView(vertical, margin(0, 0, 0, 14));
+            return;
+        }
+        if (i == 2 && !this.prepareReadyBannerDismissed) {
+            LinearLayout vertical3 = vertical();
+            vertical3.setPadding(dp(16.0f), dp(14.0f), dp(16.0f), dp(14.0f));
+            vertical3.setBackground(flat(okBg(), 26));
+            vertical3.setClipToOutline(true);
+            LinearLayout horizontal2 = horizontal();
+            horizontal2.setGravity(16);
+            TextView label4 = label("\u2713", 15.0f, -1, true);
+            label4.setGravity(17);
+            label4.setBackground(flat(okText(), 18));
+            horizontal2.addView(label4, new LinearLayout.LayoutParams(dp(36.0f), dp(36.0f)));
+            LinearLayout vertical4 = vertical();
+            vertical4.setPadding(dp(12.0f), 0, dp(4.0f), 0);
+            vertical4.addView(label(getString(R.string.text_455), 14.5f, textPrimary(), true), margin(0, 0, 0, 3));
+            TextView label5 = label(getString(R.string.text_456), 11.5f, textSecondary(), false);
+            label5.setLineSpacing(dp(2.0f), 1.0f);
+            vertical4.addView(label5);
+            horizontal2.addView(vertical4, new LinearLayout.LayoutParams(0, -2, 1.0f));
+            vertical3.addView(horizontal2);
+            vertical3.setClickable(true);
+            vertical3.setFocusable(true);
+            vertical3.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.6
+                @Override // android.view.View.OnClickListener
+                public void onClick(View view) {
+                    MainActivity.this.performTapFeedback(view);
+                    MainActivity.this.prepareReadyBannerDismissed = true;
+                    MainActivity.this.renderApp();
+                }
+            });
+            linearLayout.addView(vertical3, margin(0, 0, 0, 14));
+            return;
+        }
+        if (i == 3) {
+            LinearLayout vertical5 = vertical();
+            vertical5.setPadding(dp(16.0f), dp(14.0f), dp(16.0f), dp(14.0f));
+            vertical5.setBackground(flat(warnBg(), 26));
+            vertical5.setClipToOutline(true);
+            LinearLayout horizontal3 = horizontal();
+            horizontal3.setGravity(16);
+            TextView label6 = label("!", 15.0f, -1, true);
+            label6.setGravity(17);
+            label6.setBackground(flat(warnText(), 18));
+            horizontal3.addView(label6, new LinearLayout.LayoutParams(dp(36.0f), dp(36.0f)));
+            LinearLayout vertical6 = vertical();
+            vertical6.setPadding(dp(12.0f), 0, dp(4.0f), 0);
+            vertical6.addView(label(getString(R.string.text_457), 14.5f, textPrimary(), true), margin(0, 0, 0, 3));
+            TextView label7 = label(this.prepareFailureReason, 11.5f, textSecondary(), false);
+            label7.setLineSpacing(dp(2.0f), 1.0f);
+            vertical6.addView(label7);
+            horizontal3.addView(vertical6, new LinearLayout.LayoutParams(0, -2, 1.0f));
+            vertical5.addView(horizontal3);
+            Button tonalButton = tonalButton(getString(R.string.text_458), 13.0f);
+            tonalButton.setOnClickListener(new View.OnClickListener() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.7
+                @Override // android.view.View.OnClickListener
+                public void onClick(View view) {
+                    MainActivity.this.performTapFeedback(view);
+                    MainActivity.this.retryAutoPrepare();
+                }
+            });
+            LinearLayout.LayoutParams layoutParams3 = new LinearLayout.LayoutParams(-1, dp(44.0f));
+            layoutParams3.topMargin = dp(10.0f);
+            vertical5.addView(tonalButton, layoutParams3);
+            linearLayout.addView(vertical5, margin(0, 0, 0, 14));
+        }
+    }
+
     private void startSetupFlow() {
         if (this.setupRunning) {
             return;
@@ -2986,6 +3307,8 @@ public class MainActivity extends ComponentActivity {
         if (z) {
             this.setupDone = true;
             this.setupFinishedWithWarning = false;
+            this.prepareState = 2;
+            this.prepareReadyBannerDismissed = true;
             lambda$append$117(getString(R.string.text_165));
         } else {
             this.setupFinishedWithWarning = true;
@@ -5747,46 +6070,65 @@ public class MainActivity extends ComponentActivity {
 
     /* JADX INFO: Access modifiers changed from: private */
     public /* synthetic */ void lambda$loadBuiltInFirmware$113(UsbDevice usbDevice, final UsbResultCallback usbResultCallback) {
-        UsbDeviceConnection connection = null;
-        UsbInterface printerInterface = null;
+        try {
+            final int sendBuiltInFirmware = sendBuiltInFirmware(usbDevice);
+            runOnUiThread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.8
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$loadBuiltInFirmware$111(sendBuiltInFirmware, usbResultCallback);
+                }
+            });
+        } catch (Exception e) {
+            final String str = e.getClass().getSimpleName() + ": " + e.getMessage();
+            runOnUiThread(new Runnable() { // from class: com.mohamedelnaggar.hpp1005.MainActivity.9
+                @Override // java.lang.Runnable
+                public final void run() {
+                    MainActivity.this.lambda$loadBuiltInFirmware$112(str, usbResultCallback);
+                }
+            });
+        }
+    }
+
+    private int sendBuiltInFirmware(UsbDevice usbDevice) throws Exception {
+        InputStream openRawResource = getResources().openRawResource(R.raw.sihpp1005);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byte[] bArr = new byte[8192];
+        while (true) {
+            int read = openRawResource.read(bArr);
+            if (read == -1) {
+                break;
+            }
+            byteArrayOutputStream.write(bArr, 0, read);
+        }
+        openRawResource.close();
+        byte[] byteArray = byteArrayOutputStream.toByteArray();
+        if (byteArray.length == 0) {
+            throw new IllegalStateException(getString(R.string.text_425));
+        }
+        UsbDeviceConnection openDevice = this.usbManager.openDevice(usbDevice);
+        if (openDevice == null) {
+            throw new IllegalStateException(getString(R.string.text_416));
+        }
+        UsbInterface usbInterface = null;
         boolean claimed = false;
         try {
-            InputStream openRawResource = getResources().openRawResource(R.raw.sihpp1005);
-            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-            byte[] bArr = new byte[8192];
-            while (true) {
-                int read = openRawResource.read(bArr);
-                if (read == -1) {
-                    break;
-                }
-                byteArrayOutputStream.write(bArr, 0, read);
-            }
-            openRawResource.close();
-            byte[] byteArray = byteArrayOutputStream.toByteArray();
-            if (byteArray.length == 0) {
-                throw new IllegalStateException(getString(R.string.text_425));
-            }
-            connection = this.usbManager.openDevice(usbDevice);
-            if (connection == null) {
-                throw new IllegalStateException(getString(R.string.text_416));
-            }
-            for (int i2 = 0; i2 < usbDevice.getInterfaceCount(); i2++) {
-                UsbInterface candidate = usbDevice.getInterface(i2);
+            for (int i = 0; i < usbDevice.getInterfaceCount(); i++) {
+                UsbInterface candidate = usbDevice.getInterface(i);
                 if (candidate.getInterfaceClass() == 7) {
-                    printerInterface = candidate;
+                    usbInterface = candidate;
                     break;
                 }
             }
-            if (printerInterface == null) {
+            if (usbInterface == null) {
                 throw new IllegalStateException(getString(R.string.text_001));
             }
-            claimed = connection.claimInterface(printerInterface, true);
+            claimed = openDevice.claimInterface(usbInterface, true);
             if (!claimed) {
                 throw new IllegalStateException(getString(R.string.text_002));
             }
             UsbEndpoint usbEndpoint = null;
-            for (int i3 = 0; i3 < printerInterface.getEndpointCount(); i3++) {
-                UsbEndpoint endpoint = printerInterface.getEndpoint(i3);
+            for (int i2 = 0; i2 < usbInterface.getEndpointCount(); i2++) {
+                UsbEndpoint endpoint = usbInterface.getEndpoint(i2);
                 if (endpoint.getDirection() == 0 && endpoint.getType() == 2) {
                     usbEndpoint = endpoint;
                     break;
@@ -5795,39 +6137,23 @@ public class MainActivity extends ComponentActivity {
             if (usbEndpoint == null) {
                 throw new IllegalStateException(getString(R.string.text_003));
             }
-            int i = 0;
-            while (i < byteArray.length) {
-                int bulkTransfer = connection.bulkTransfer(usbEndpoint, byteArray, i, Math.min(16384, byteArray.length - i), 10000);
+            int i3 = 0;
+            while (i3 < byteArray.length) {
+                int bulkTransfer = openDevice.bulkTransfer(usbEndpoint, byteArray, i3, Math.min(16384, byteArray.length - i3), 10000);
                 if (bulkTransfer <= 0) {
-                    throw new IllegalStateException(getString(R.string.text_417) + i + getString(R.string.text_016) + byteArray.length + getString(R.string.text_418) + bulkTransfer + ").");
+                    throw new IllegalStateException(getString(R.string.text_417) + i3 + getString(R.string.text_016) + byteArray.length + getString(R.string.text_418) + bulkTransfer + ").");
                 }
-                i += bulkTransfer;
+                i3 += bulkTransfer;
             }
-            final int sentTotal = i;
-            runOnUiThread(new Runnable() {
-                @Override // java.lang.Runnable
-                public final void run() {
-                    MainActivity.this.lambda$loadBuiltInFirmware$111(sentTotal, usbResultCallback);
-                }
-            });
-        } catch (Exception e) {
-            final String str = e.getClass().getSimpleName() + ": " + e.getMessage();
-            runOnUiThread(new Runnable() {
-                @Override // java.lang.Runnable
-                public final void run() {
-                    MainActivity.this.lambda$loadBuiltInFirmware$112(str, usbResultCallback);
-                }
-            });
+            return i3;
         } finally {
-            if (connection != null) {
-                if (claimed && printerInterface != null) {
-                    try {
-                        connection.releaseInterface(printerInterface);
-                    } catch (Exception unused) {
-                    }
+            if (claimed && usbInterface != null) {
+                try {
+                    openDevice.releaseInterface(usbInterface);
+                } catch (Exception unused) {
                 }
-                connection.close();
             }
+            openDevice.close();
         }
     }
 
@@ -5960,6 +6286,7 @@ public class MainActivity extends ComponentActivity {
             }
         }
         lambda$append$117(getString(R.string.text_439));
+        maybeAutoPrepare();
     }
 
     private void clearLogWithHeader(String str) {
@@ -6018,6 +6345,7 @@ public class MainActivity extends ComponentActivity {
             this.layoutPreviewBitmap.recycle();
         }
         dismissCapsuleOverlay();
+        this.autoPrepareHandler.removeCallbacks(this.autoPrepareRunnable);
         try {
             unregisterReceiver(this.usbReceiver);
         } catch (IllegalArgumentException unused) {

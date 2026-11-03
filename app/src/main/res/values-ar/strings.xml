@@ -448,4 +448,22 @@
     <string name="text_442">الوجه الثاني</string>
     <string name="text_443">الوجه الأول</string>
     <string name="text_444">" · ورقة "</string>
+    <string name="text_445">تهيئة تلقائية: فحص البرنامج الثابت للطابعة…</string>
+    <string name="text_446">تهيئة تلقائية: البرنامج الثابت محمّل بالفعل؛ لا حاجة للإرسال.</string>
+    <string name="text_447">تهيئة تلقائية: البرنامج الثابت غير محمّل؛ يتم إرسال البرنامج المدمج…</string>
+    <string name="text_448">انتهت التهيئة التلقائية: الطابعة جاهزة للطباعة.</string>
+    <string name="text_449">"تعذّرت التهيئة التلقائية: "</string>
+    <string name="text_450">جارٍ التهيئة…</string>
+    <string name="text_451">جاهزة للطباعة</string>
+    <string name="text_452">تحتاج تهيئة</string>
+    <string name="text_453">لا تقم بفصل الطابعة، جاري التهيئة</string>
+    <string name="text_454">يقوم التطبيق بتهيئة الطابعة تلقائيًا. يستغرق هذا لحظات فقط.</string>
+    <string name="text_455">الطابعة جاهزة</string>
+    <string name="text_456">تمت التهيئة تلقائيًا. يمكنك الطباعة الآن.</string>
+    <string name="text_457">تعذّرت التهيئة التلقائية</string>
+    <string name="text_458">إعادة المحاولة</string>
+    <string name="text_459">فحص البرنامج الثابت…</string>
+    <string name="text_460">تحميل برنامج الطابعة…</string>
+    <string name="text_461">تهيئة تلقائية: طلب إذن USB…</string>
+    <string name="text_462">ما زالت الطابعة لا ترسل إصدار البرنامج الثابت بعد التحميل.</string>
 </resources>

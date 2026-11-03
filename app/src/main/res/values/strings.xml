@@ -448,4 +448,22 @@
     <string name="text_442">Back side</string>
     <string name="text_443">Front side</string>
     <string name="text_444">" · sheet "</string>
+    <string name="text_445">Auto-prepare: checking the printer firmware…</string>
+    <string name="text_446">Auto-prepare: firmware is already loaded; nothing to send.</string>
+    <string name="text_447">Auto-prepare: firmware is not loaded; sending the built-in firmware…</string>
+    <string name="text_448">Auto-prepare finished: the printer is ready to print.</string>
+    <string name="text_449">"Auto-prepare failed: "</string>
+    <string name="text_450">Preparing…</string>
+    <string name="text_451">Ready to print</string>
+    <string name="text_452">Needs setup</string>
+    <string name="text_453">Do not unplug the printer, preparing</string>
+    <string name="text_454">The app is setting the printer up automatically. This only takes a moment.</string>
+    <string name="text_455">Printer ready</string>
+    <string name="text_456">Setup finished automatically. You can print now.</string>
+    <string name="text_457">Automatic setup failed</string>
+    <string name="text_458">Retry</string>
+    <string name="text_459">Checking firmware…</string>
+    <string name="text_460">Loading printer software…</string>
+    <string name="text_461">Auto-prepare: requesting USB permission…</string>
+    <string name="text_462">The printer still does not report a firmware version after loading.</string>
 </resources>

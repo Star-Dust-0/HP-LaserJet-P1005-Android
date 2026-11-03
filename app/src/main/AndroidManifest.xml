@@ -37,6 +37,12 @@
                     android:mimeType="image/*"
                     android:scheme="content"/>
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/p1005_device_filter"/>
         </activity>
         <service
             android:name="com.mohamedelnaggar.hpp1005.HpPrintService"
