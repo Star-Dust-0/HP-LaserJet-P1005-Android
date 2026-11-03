@@ -22,6 +22,7 @@ An Android app that prints documents and photos straight to an HP LaserJet P1005
 | Print queue | Follow running and waiting jobs, plus a print history |
 | Print options | Copies, page range, paper size, page layout, quality, and manual two-sided printing |
 | Automatic setup | The app prepares the printer by itself as soon as it is connected, with a clear do-not-unplug message, and loads the printer software when needed. A manual setup wizard and test page stay available |
+| Print from any app | The printer appears in the Android system print dialog; printing from any app prepares the printer automatically first when needed |
 | Printer maintenance | Check the firmware version (FWVER) and load it when needed |
 | Diagnostics log | USB and print log for troubleshooting |
 | Arabic interface | Full Arabic UI in a One UI style, dark and light, for phone and tablet |

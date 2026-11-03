@@ -16,7 +16,7 @@ android {
     packagingOptions { jniLibs { useLegacyPackaging = true } }
     namespace 'com.mohamedelnaggar.hpp1005'
     compileSdk 35
-    defaultConfig { applicationId 'com.hpp1005.printer'; minSdk 23; targetSdk 28; versionCode 218; versionName '1.2' }
+    defaultConfig { applicationId 'com.hpp1005.printer'; minSdk 23; targetSdk 28; versionCode 219; versionName '1.3' }
     buildFeatures { buildConfig true }
     buildTypes {
         debug { if (System.getenv("MORPHE_KEYSTORE_FILE")) signingConfig signingConfigs.morphe }
